@@ -1,0 +1,107 @@
+.primary-button {
+  width: 208px;
+  height: 48px;
+  color: white;
+}
+
+.home-main {
+  margin-top: 60px;
+  margin-left: 32px;
+  margin-right: 40px;
+  height: 100%;
+}
+
+.home-header {
+  margin-bottom: 40px;
+}
+
+.home-infos {
+  margin-bottom: 36px;
+}
+
+.home-info {
+  border: #eff2f4 solid 1px;
+  border-radius: 4px;
+
+  padding: 16px;
+  height: 85px;
+  width: 350px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.info-data {
+  width: 70%;
+}
+
+.info-picture {
+  border-radius: 50%;
+  height: 48px;
+  width: 48px;
+  margin-right: 17.5px;
+  background-color: grey; /* TODO REMOVE */
+}
+
+.arrow-right {
+  -webkit-transform: rotate(90deg);
+  -moz-transform: rotate(90deg);
+  -o-transform: rotate(90deg);
+  -ms-transform: rotate(90deg);
+  transform: rotate(90deg);
+  margin-right: 12px;
+}
+
+.home-radar {
+  display: flex;
+  flex-direction: column;
+  width: 350px;
+  height: 20px;
+}
+.stream-table {
+  margin-bottom: 24px;
+}
+.contract-icon {
+  margin-right: 8px;
+}
+
+.radar-contract {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border: #eff2f4 solid 1px;
+  border-radius: 4px;
+
+  padding: 16px;
+  height: 20px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.radar-contract:hover {
+  cursor: pointer;
+}
+
+.radar-header {
+  margin-bottom: 24px;
+}
+
+.radar-title {
+  margin-bottom: 16px;
+  font-weight: bold;
+  color: #4e545a;
+}
+
+.collab-previews {
+  display: flex;
+  flex-direction: row;
+}
+
+.collab-preview {
+  padding: 3px;
+  margin-right: 5px;
+  background: rgb(212, 210, 210);
+  color: black;
+  border-radius: 4px;
+  border: none;
+}

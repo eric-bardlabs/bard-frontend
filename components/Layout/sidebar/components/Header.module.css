@@ -1,0 +1,41 @@
+/* HAMBURGER-BUTTON CLASSES */
+.burger {
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.burgerTop,
+.burgerMiddle,
+.burgerBottom {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 24px;
+  height: 2px;
+  background: #fff;
+  transform: rotate(0);
+  transition: all 0.2s;
+}
+
+.burgerMiddle {
+  transform: translateY(7px);
+}
+
+.burgerBottom {
+  transform: translateY(14px);
+}
+
+.burgerTopOpen {
+  transform: rotate(45deg) translateY(6px) translate(6px);
+}
+
+.burgerMiddleOpen {
+  display: none;
+}
+
+.burgerBottomOpen {
+  transform: rotate(-45deg) translateY(6px) translate(-6px);
+}
