@@ -66,18 +66,7 @@ const ProfileField = ({
         )
       ) : (
         <div className={`p-2 ${!value ? "text-default-400 italic" : ""}`}>
-          {field === "profile_link" && value ? (
-            <a 
-              href={value} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              {value}
-            </a>
-          ) : (
-            displayValue
-          )}
+          {displayValue}
         </div>
       )}
     </div>
@@ -313,7 +302,7 @@ const Profile = () => {
               label="Profile Link"
               field="profile_link"
               value={profile.profile_link}
-              type="url"
+              type="text"
               placeholder="Enter your website or social media link"
               isEditing={isEditing}
               editFormData={editFormData}
