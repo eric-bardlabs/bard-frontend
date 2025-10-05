@@ -1,124 +1,344 @@
 "use client";
-import axios from "axios";
-import "react-big-calendar/lib/css/react-big-calendar.css";
-
 import React, { useState } from "react";
-import { Spinner } from "@/components/ui/spinner";
-import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { useOrganization } from "@clerk/nextjs";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@clerk/nextjs";
+import { Icon } from "@iconify/react";
+import { toast } from "sonner";
 
 import {
-  CollaboratorProfile,
-  OrganizationCollaboratorProfile,
-  CollaboratorRole,
-} from "@/db/schema";
-import { Icon } from "@iconify/react";
+  Card,
+  CardBody,
+  CardHeader,
+  Button,
+  Input,
+  Textarea,
+  Avatar,
+  Spinner,
+} from "@heroui/react";
 
-import { Tabs, Tab } from "@heroui/react";
-import { ProfileCard, ProfileSharing } from "@/modules/profile/";
-import { useAuth } from "@clerk/nextjs";
+import { fetchMyCollaboratorProfile, updateCollaborator, type Collaborator } from "@/lib/api/collaborators";
+
+interface ProfileFieldProps {
+  label: string;
+  field: keyof Collaborator;
+  value?: string;
+  type?: string;
+  placeholder?: string;
+  multiline?: boolean;
+  isEditing: boolean;
+  editFormData: Partial<Collaborator>;
+  onInputChange: (field: keyof Collaborator, value: string) => void;
+}
+
+const ProfileField = ({ 
+  label, 
+  field, 
+  value, 
+  type = "text",
+  placeholder,
+  multiline = false,
+  isEditing,
+  editFormData,
+  onInputChange
+}: ProfileFieldProps) => {
+  const displayValue = value || "Not set";
+  
+  return (
+    <div className="space-y-2">
+      <label className="text-small font-medium text-default-500">
+        {label}
+      </label>
+      {isEditing ? (
+        multiline ? (
+          <Textarea
+            value={editFormData[field] as string || ""}
+            onChange={(e) => onInputChange(field, e.target.value)}
+            placeholder={placeholder}
+            className="min-h-[80px]"
+          />
+        ) : (
+          <Input
+            type={type}
+            value={editFormData[field] as string || ""}
+            onChange={(e) => onInputChange(field, e.target.value)}
+            placeholder={placeholder}
+          />
+        )
+      ) : (
+        <div className={`p-2 ${!value ? "text-default-400 italic" : ""}`}>
+          {field === "profile_link" && value ? (
+            <a 
+              href={value} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              {value}
+            </a>
+          ) : (
+            displayValue
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Profile = () => {
-  const { organization } = useOrganization();
-  const organizationId = organization?.id;
-  const { userId } = useAuth();
-  const router = useRouter();
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFormData, setEditFormData] = useState<Partial<Collaborator>>({});
 
-  const { data: myProfileData, isLoading: myProfileIsLoading } = useQuery<{
-    collaboratorProfile: CollaboratorProfile;
-  }>({
+  const { data: profile, isLoading, error } = useQuery<Collaborator | null>({
     queryKey: ["myCollaboratorProfile"],
-    queryFn: () =>
-      axios.get("/api/collaborators/myProfile").then((res) => res.data),
+    queryFn: async () => {
+      const token = await getToken( { template: "bard-backend" } );
+      if (!token) throw new Error("No authentication token");
+      return fetchMyCollaboratorProfile({ token });
+    },
   });
 
-  //   const { data: invitationsData, isLoading: invitationsLoading } = useQuery<{
-  //     collaboratorProfile: CollaboratorProfile;
-  // }>({
-  //     queryKey: ["getInvitations"],
-  //     queryFn: () =>
-  //       axios.get("/api/invites").then((res) => res.data),
-  //   });
-  const { data: profilesData, isLoading: ProfileIsLoading } = useQuery<{
-    profiles: Array<
-      CollaboratorProfile & {
-        roles: Array<CollaboratorRole>;
-        collabOrganization: Array<OrganizationCollaboratorProfile>;
-      }
-    >;
-  }>({
-    queryKey: ["getAllCollaboratorProfiles"],
-    queryFn: () =>
-      axios.get("/api/collaborators/myProfile/getAll").then((res) => res.data),
+  const updateMutation = useMutation({
+    mutationFn: async (updates: Partial<Collaborator>) => {
+      const token = await getToken({ template: "bard-backend" });
+      if (!token) throw new Error("No authentication token");
+      if (!profile?.id) throw new Error("No profile ID");
+      
+      return updateCollaborator({
+        token,
+        id: profile.id,
+        updates,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myCollaboratorProfile"] });
+      setIsEditing(false);
+      setEditFormData({});
+      toast.success("Profile updated successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to update profile");
+      console.error("Update error:", error);
+    },
   });
 
-  if (myProfileIsLoading || ProfileIsLoading) {
+  const handleEdit = () => {
+    if (profile) {
+      setEditFormData({
+        legal_name: profile.legal_name || "",
+        artist_name: profile.artist_name || "",
+        email: profile.email || "",
+        region: profile.region || "",
+        pro: profile.pro || "",
+        pro_id: profile.pro_id || "",
+        profile_link: profile.profile_link || "",
+        bio: profile.bio || "",
+      });
+      setIsEditing(true);
+    }
+  };
+
+  const handleSave = () => {
+    const updates = Object.fromEntries(
+      Object.entries(editFormData).filter(([_, value]) => value !== undefined)
+    );
+    updateMutation.mutate(updates);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setEditFormData({});
+  };
+
+  const handleInputChange = (field: keyof Collaborator, value: string) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  if (isLoading) {
     return (
-      <div className="w-full flex flex-col items-center">
-        <Spinner size={48} />
+      <div className="w-full flex flex-col items-center justify-center min-h-[400px]">
+        <Spinner size="lg" />
+        <p className="mt-2 text-small text-default-500">Loading profile...</p>
       </div>
     );
   }
 
-  if (!profilesData) {
-    // TODO handle empty state
+  if (error) {
     return (
-      <div className="flex flex-col h-full">
-        <div className="flex flex-row justify-between md:mt-0">
-          <div style={{ marginBottom: "40px" }}>
-            <h1 className="text-[24px] md:text-[36px]">Profile</h1>
-          </div>
-        </div>
+      <div className="w-full flex flex-col items-center justify-center min-h-[400px]">
+        <Icon icon="solar:warning-bold" className="h-12 w-12 text-danger mb-4" />
+        <p className="text-large font-medium">Failed to load profile</p>
+        <p className="text-small text-default-500">Please try again later</p>
       </div>
     );
   }
-  const myProfile = (profilesData.profiles ?? []).find(
-    (p) => p.clerkUserId === userId
-  );
+
+  if (!profile) {
+    return (
+      <div className="w-full flex flex-col items-center justify-center min-h-[400px]">
+        <Icon icon="solar:user-plus-bold" className="h-12 w-12 text-default-400 mb-4" />
+        <p className="text-large font-medium">No profile found</p>
+        <p className="text-small text-default-500">Contact support to set up your profile</p>
+      </div>
+    );
+  }
+
 
   return (
-    <div className="flex flex-col items-start h-screen">
-      <div className="flex flex-row justify-between md:mt-0">
-        <div style={{ marginBottom: "20px" }}>
-          <h1 className="text-[24px] md:text-[36px]">Profile</h1>
-        </div>
+    <div className="container mx-auto p-6 max-w-4xl">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
+        <p className="text-default-500 mt-2">
+          Manage your collaborator profile information
+        </p>
       </div>
-      <Tabs
-        classNames={{
-          tabList: "mx-4 mt-6 text-3xl",
-          tabContent: "text-large",
-        }}
-        className="self-center"
-        size="lg"
-      >
-        <Tab
-          key="account-settings"
-          className="self-center w-2/3"
-          textValue="Account Settings"
-          title={
-            <div className="flex items-center gap-1.5">
-              <Icon icon="solar:user-id-bold" width={20} />
-              <p>Profile</p>
+
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-4">
+              <Avatar 
+                className="h-16 w-16"
+                name={profile.artist_name || profile.legal_name || "U"}
+                showFallback
+              />
+              <div>
+                <h2 className="text-xl font-semibold">
+                  {profile.artist_name || profile.legal_name || "No name set"}
+                </h2>
+                <p className="text-small text-default-500">
+                  {profile.email || "No email set"}
+                </p>
+              </div>
             </div>
-          }
-        >
-          {myProfile && <ProfileCard myProfile={myProfile} />}
-        </Tab>
-        <Tab
-          key="notifications-settings"
-          className="self-center w-2/3"
-          textValue="Notification Settings"
-          title={
-            <div className="flex items-center gap-1.5">
-              <Icon icon="solar:bell-bold" width={20} />
-              <p>Sharing</p>
+            <div className="flex gap-2">
+              {isEditing ? (
+                <>
+                  <Button
+                    color="primary"
+                    onClick={handleSave}
+                    disabled={updateMutation.isPending}
+                  >
+                    Save Changes
+                  </Button>
+                  <Button
+                    variant="bordered"
+                    onClick={handleCancel}
+                    disabled={updateMutation.isPending}
+                  >
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  color="primary"
+                  onClick={handleEdit}
+                >
+                  <Icon icon="solar:pen-bold" className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </Button>
+              )}
             </div>
-          }
-        >
-          <ProfileSharing profiles={profilesData?.profiles} />
-        </Tab>
-      </Tabs>
+          </div>
+        </CardHeader>
+        
+        <CardBody className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <ProfileField
+              label="Legal Name"
+              field="legal_name"
+              value={profile.legal_name}
+              placeholder="Enter your full legal name"
+              isEditing={isEditing}
+              editFormData={editFormData}
+              onInputChange={handleInputChange}
+            />
+            
+            <ProfileField
+              label="Artist Name"
+              field="artist_name"
+              value={profile.artist_name}
+              placeholder="Enter your artist/stage name"
+              isEditing={isEditing}
+              editFormData={editFormData}
+              onInputChange={handleInputChange}
+            />
+            
+            <ProfileField
+              label="Email Address"
+              field="email"
+              value={profile.email}
+              type="email"
+              placeholder="Enter your email address"
+              isEditing={isEditing}
+              editFormData={editFormData}
+              onInputChange={handleInputChange}
+            />
+            
+            <ProfileField
+              label="Region"
+              field="region"
+              value={profile.region}
+              placeholder="Enter your region/location"
+              isEditing={isEditing}
+              editFormData={editFormData}
+              onInputChange={handleInputChange}
+            />
+            
+            <ProfileField
+              label="PRO"
+              field="pro"
+              value={profile.pro}
+              placeholder="Enter your PRO (e.g., ASCAP, BMI)"
+              isEditing={isEditing}
+              editFormData={editFormData}
+              onInputChange={handleInputChange}
+            />
+            
+            <ProfileField
+              label="PRO ID"
+              field="pro_id"
+              value={profile.pro_id}
+              placeholder="Enter your PRO member ID"
+              isEditing={isEditing}
+              editFormData={editFormData}
+              onInputChange={handleInputChange}
+            />
+            
+            <ProfileField
+              label="Profile Link"
+              field="profile_link"
+              value={profile.profile_link}
+              type="url"
+              placeholder="Enter your website or social media link"
+              isEditing={isEditing}
+              editFormData={editFormData}
+              onInputChange={handleInputChange}
+            />
+          </div>
+          
+          <ProfileField
+            label="Bio"
+            field="bio"
+            value={profile.bio}
+            placeholder="Tell us about yourself and your music..."
+            multiline
+            isEditing={isEditing}
+            editFormData={editFormData}
+            onInputChange={handleInputChange}
+          />
+        </CardBody>
+      </Card>
+      
+      <div className="mt-6 text-xs text-default-400">
+        <p>
+          Last updated: {profile.updated_at ? new Date(profile.updated_at).toLocaleDateString() : "Never"}
+        </p>
+      </div>
     </div>
   );
 };
