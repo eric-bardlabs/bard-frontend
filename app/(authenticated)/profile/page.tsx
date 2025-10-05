@@ -14,6 +14,7 @@ import {
   Textarea,
   Avatar,
   Spinner,
+  Tooltip,
 } from "@heroui/react";
 
 import { fetchMyCollaboratorProfile, updateCollaborator, type Collaborator } from "@/lib/api/collaborators";
@@ -28,6 +29,8 @@ interface ProfileFieldProps {
   isEditing: boolean;
   editFormData: Partial<Collaborator>;
   onInputChange: (field: keyof Collaborator, value: string) => void;
+  disabled?: boolean;
+  disabledMessage?: string;
 }
 
 const ProfileField = ({ 
@@ -39,7 +42,9 @@ const ProfileField = ({
   multiline = false,
   isEditing,
   editFormData,
-  onInputChange
+  onInputChange,
+  disabled = false,
+  disabledMessage
 }: ProfileFieldProps) => {
   const displayValue = value || "Not set";
   
@@ -48,7 +53,7 @@ const ProfileField = ({
       <label className="text-small font-medium text-default-500">
         {label}
       </label>
-      {isEditing ? (
+      {isEditing && !disabled ? (
         multiline ? (
           <Textarea
             value={editFormData[field] as string || ""}
@@ -66,7 +71,15 @@ const ProfileField = ({
         )
       ) : (
         <div className={`p-2 ${!value ? "text-default-400 italic" : ""}`}>
-          {displayValue}
+          {disabled && disabledMessage && isEditing ? (
+            <Tooltip content={disabledMessage}>
+              <div className="cursor-help">
+                {displayValue}
+              </div>
+            </Tooltip>
+          ) : (
+            displayValue
+          )}
         </div>
       )}
     </div>
@@ -118,6 +131,7 @@ const Profile = () => {
         legal_name: profile.legal_name || "",
         artist_name: profile.artist_name || "",
         email: profile.email || "",
+        phone_number: profile.phone_number || "",
         region: profile.region || "",
         pro: profile.pro || "",
         pro_id: profile.pro_id || "",
@@ -266,6 +280,21 @@ const Profile = () => {
               isEditing={isEditing}
               editFormData={editFormData}
               onInputChange={handleInputChange}
+              disabled={true}
+              disabledMessage="Update your email in account settings"
+            />
+            
+            <ProfileField
+              label="Phone Number"
+              field="phone_number"
+              value={profile.phone_number}
+              type="tel"
+              placeholder="Enter your phone number"
+              isEditing={isEditing}
+              editFormData={editFormData}
+              onInputChange={handleInputChange}
+              disabled={true}
+              disabledMessage="Update your phone number in account settings"
             />
             
             <ProfileField
