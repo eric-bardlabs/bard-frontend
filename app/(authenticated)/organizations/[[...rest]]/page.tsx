@@ -209,23 +209,8 @@ const CalendarSettings = () => {
   // Open Google OAuth window
   const openGoogleLogin = async () => {
     try {
-      const token = await getToken({ template: "bard-backend" });
-      
-      const API_BASE_URL = process.env.NEXT_PUBLIC_BARD_BACKEND_API_BASE_URL || "http://localhost:8000";
-      
-      const tokenString = token || '';
-      
-      if (!tokenString) {
-        console.error('No auth token available');
-        setStatus({
-          type: "error",
-          message: "Authentication required. Please sign in first."
-        });
-        return;
-      }
-      
-      // Open backend Google auth endpoint
-      const url = `${API_BASE_URL}/auth/google/authorize?token=${encodeURIComponent(tokenString)}`;
+      // Use frontend API route that will redirect to backend
+      const url = `/api/auth/google/start`;
       
       window.open(
         url,
