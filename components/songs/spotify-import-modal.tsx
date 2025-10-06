@@ -12,9 +12,9 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
-import { useOrganization } from "@clerk/nextjs";
+import { useOrganization, useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
+import { importFromSpotify } from "@/lib/api/spotify";
 
 interface SpotifyImportModalProps {
   isOpen: boolean;
@@ -67,17 +67,20 @@ export const SpotifyImportModal: React.FC<SpotifyImportModalProps> = ({
   const [detectedType, setDetectedType] = React.useState<SpotifyContentType>(null);
 
   const { organization } = useOrganization();
+  const { getToken } = useAuth();
   const organizationId = organization?.id;
 
-  const importFromSpotify = useMutation({
+  const importFromSpotifyMutation = useMutation({
     mutationFn: async ({ type, spotifyId }: { type: string; spotifyId: string }) => {
-      return axios
-        .post("/api/import-from-spotify", { 
-          type, 
-          spotifyId, 
-          organizationId 
-        })
-        .then((res) => res.data);
+      const token = await getToken({ template: "bard-backend" });
+      if (!token) throw new Error("No authentication token");
+      if (!organizationId) throw new Error("No organization selected");
+      
+      return importFromSpotify({
+        type: type as "track" | "album" | "playlist" | "artist",
+        spotifyId,
+        organizationId
+      }, token);
     },
     mutationKey: ["importFromSpotify"],
     onSuccess: (data) => {
@@ -136,7 +139,7 @@ export const SpotifyImportModal: React.FC<SpotifyImportModalProps> = ({
     setError("");
     setIsSubmitting(true);
     
-    importFromSpotify.mutate({ type, spotifyId: id });
+    importFromSpotifyMutation.mutate({ type, spotifyId: id });
   };
 
   const handleButtonPress = () => {
