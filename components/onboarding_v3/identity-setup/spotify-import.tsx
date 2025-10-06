@@ -22,8 +22,8 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useMutation, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
 import { useOrganization, useAuth } from "@clerk/nextjs";
+import { importFromSpotify } from "@/lib/api/spotify";
 import { OnboardingFormData } from "@/types/onboarding";
 import { Track, TrackCollaborator, fetchTracks } from "@/lib/api/tracks";
 import { Album } from "@/lib/api/albums";
@@ -52,6 +52,7 @@ export function SpotifyImport({
   const [importedSpotifyData, setImportedSpotifyData] = React.useState<any[]>(
     []
   );
+  const [totalImported, setTotalImported] = React.useState<number>(0);
 
   const { organization } = useOrganization();
   const { getToken } = useAuth();
@@ -127,15 +128,25 @@ export function SpotifyImport({
   const importSpotify = useMutation({
     mutationKey: ["importSpotifyData"],
     mutationFn: async (data: { type: string; spotifyId: string }) => {
-      return axios.post("/api/import-from-spotify", {
-        ...data,
-        organizationId,
-      });
+      const token = await getToken({ template: "bard-backend" });
+      if (!token) throw new Error("No authentication token");
+      if (!organizationId) throw new Error("No organization selected");
+      
+      return importFromSpotify({
+        type: data.type as "track" | "album" | "playlist" | "artist",
+        spotifyId: data.spotifyId,
+        organizationId
+      }, token);
     },
     onSuccess: (response) => {
       // Add imported tracks to the display
-      if (response.data.tracks && response.data.tracks.length > 0) {
-        setImportedSpotifyData((prev) => [...prev, ...response.data.tracks]);
+      if (response.tracks && response.tracks.length > 0) {
+        setImportedSpotifyData(response.tracks);
+      }
+      
+      // Track total imported count
+      if (response.imported) {
+        setTotalImported(response.imported);
       }
 
       // Update parent data with new link
@@ -307,7 +318,7 @@ export function SpotifyImport({
           >
             <Tab
               key="imported"
-              title={`Current Import (${importedSpotifyData.length})`}
+              title={`Current Import (${totalImported})`}
             >
               <div className="h-full border">
                 {importedSpotifyData.length === 0 ? (
@@ -360,6 +371,14 @@ export function SpotifyImport({
                         ))}
                       </TableBody>
                     </Table>
+                    {totalImported > importedSpotifyData.length && (
+                      <div className="p-4 bg-default-50 border-t">
+                        <p className="text-small text-default-600">
+                          {totalImported - importedSpotifyData.length} more songs were imported. 
+                          Check the "Import History" tab to see all imported tracks.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
