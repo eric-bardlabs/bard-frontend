@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useOrganization } from "@clerk/nextjs";
 
 import { useParams, useRouter } from "next/navigation";
-import SongDetails from "@/modules/songs/components/Song/SongDetails";
+import SongDetails from "@/components/songs/SongDetails";
 import { getTrack, Track } from "@/lib/api/tracks";
 import { useAuth } from "@clerk/nextjs";
 

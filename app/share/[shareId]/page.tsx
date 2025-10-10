@@ -4,8 +4,8 @@ import { Spinner } from "@heroui/react";
 import { useQuery } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
 import { Tabs, Tab } from "@heroui/react";
-import { Overview } from "../../../modules/songs/components/Song/overview";
-import { Composition } from "../../../modules/songs/components/Song/composition";
+import { Overview } from "@/components/songs/overview";
+import { Composition } from "@/components/songs/composition";
 import { getSharedTrack } from "@/lib/api/share";
 
 const Share = () => {

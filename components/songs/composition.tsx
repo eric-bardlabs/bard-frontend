@@ -3,13 +3,13 @@ import {
   Button,
   Card,
   CardBody,
+  Chip,
   Divider,
   Input,
   Select,
   SelectItem,
 } from "@heroui/react";
-import { SongStatus } from "./songStatus";
-import ShareSong from "./shareSong";
+import ShareSong from "@/components/songs/shareSong";
 import { useMemo, useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -162,7 +162,11 @@ export const Composition = (props: {
               <p className="font-semibold text-xl text-muted-foreground">
                 {props.song.artist?.artist_name || props.song.artist?.legal_name || "---"}
               </p>
-            <SongStatus status={props.song.status || ""} />
+            {props.song.status && (
+              <Chip color="default" size="md">
+                {props.song.status}
+              </Chip>
+            )}
           </div>
           {!props.readonly && (
               <div className="flex flex-row gap-2 items-center">

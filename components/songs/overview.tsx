@@ -10,13 +10,13 @@ import {
   Input,
   Textarea,
   DatePicker,
+  Chip,
 } from "@heroui/react";
 import { PencilIcon, CheckIcon, XIcon } from "lucide-react";
-import { SongStatus } from "./songStatus";
 import dayjs from "dayjs";
 import { ProfileCard } from "@/components/collaborator/profile-card";
 import { useState, useEffect } from "react";
-import ShareSong from "./shareSong";
+import ShareSong from "@/components/songs/shareSong";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { parseDate } from "@internationalized/date";
@@ -365,7 +365,11 @@ export const Overview = (props: {
                     props.song.artist?.legal_name ||
                     "---"}
                 </p>
-                <SongStatus status={props.song.status || ""} />
+                {props.song.status && (
+                  <Chip color="default" size="md">
+                    {props.song.status}
+                  </Chip>
+                )}
               </>
             )}
           </div>

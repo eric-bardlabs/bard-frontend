@@ -2,10 +2,10 @@
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
 import { Tabs, Tab } from "@heroui/react";
-import { Overview } from "./overview";
-import { Composition } from "./composition";
-import { History } from "./history";
-import { Links } from "./links";
+import { Overview } from "@/components/songs/overview";
+import { Composition } from "@/components/songs/composition";
+import { History } from "@/components/songs/history";
+import { Links } from "@/components/songs/links";
 import { useState } from "react";
 import { Track } from "@/lib/api/tracks";
 
