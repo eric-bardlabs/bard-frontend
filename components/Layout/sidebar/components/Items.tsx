@@ -29,7 +29,6 @@ interface Props {
 
 export enum Pages {
   songs = "Songs",
-  contracts = "Contracts",
   collaborators = "Collaborators",
   earnings = "Earnings",
   calendar = "Calendar",
