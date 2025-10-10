@@ -15,9 +15,6 @@ const UserContext = createContext<UserContextType>({
 export const useUserContext = () => useContext(UserContext);
 
 export const UserProvider = ({ children }: PropsWithChildren) => {
-  // You can use React Query here to fetch user data
-  // For simplicity, let's assume you have a function called fetchUser
-
   const { data, isLoading } = useQuery<{
     user: User;
   }>({
@@ -25,13 +22,6 @@ export const UserProvider = ({ children }: PropsWithChildren) => {
     queryKey: ["user"],
     staleTime: Infinity,
   });
-
-  // useEffect(() => {
-  //   posthog.identify(data?.user?.id, {
-  //     email: data?.user?.emailAddress,
-  //     organizationId: data?.user?.organizationId,
-  //   });
-  // }, [data?.user]);
 
   return (
     <UserContext.Provider value={{ user: data as any, isLoading }}>
