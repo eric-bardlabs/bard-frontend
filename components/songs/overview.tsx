@@ -670,6 +670,9 @@ export const Overview = (props: {
                     <SelectItem key="performance">Performance</SelectItem>
                     <SelectItem key="writing">Writing</SelectItem>
                     <SelectItem key="production">Production</SelectItem>
+                    <SelectItem key="distribution">Distribution</SelectItem>
+                    <SelectItem key="publishing">Publishing</SelectItem>
+                    <SelectItem key="other">Other</SelectItem>
                   </Select>
                 </div>
               );
