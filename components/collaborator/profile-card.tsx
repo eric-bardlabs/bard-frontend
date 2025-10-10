@@ -3,7 +3,6 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import React, { useState } from "react";
 
 import { Collaborator } from "@/lib/api/collaborators";
-import ProfileEditForm from "./profile-edit-form";
 
 import {
   Card,
@@ -12,15 +11,11 @@ import {
   Button,
   Avatar,
   Divider,
-  Chip,
-  Link,
-  Spacer,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
 export const ProfileCard = ({
   myProfile,
-  showEdit = true,
   showEmail = true,
   showRelationships = false,
   headerOverride,
@@ -28,7 +23,6 @@ export const ProfileCard = ({
   isPopOver = false,
 }: {
   myProfile: Collaborator;
-  showEdit?: Boolean;
   showEmail?: Boolean;
   showRelationships?: Boolean;
   headerOverride?: string;
@@ -52,8 +46,6 @@ export const ProfileCard = ({
     </div>
   ));
 
-  const [editing, setEditing] = useState(false);
-
   const s = isPopOver
     ? "w-full max-w-2xl p-2 self-center"
     : "w-full max-w-6xl p-2 self-center";
@@ -70,21 +62,9 @@ export const ProfileCard = ({
               "This is the profile that will be shared with Organizations that you work with"}
           </p>
         </div>
-        {!editing && showEdit && (
-          <Button color="primary" onClick={() => setEditing(true)}>
-            Edit
-          </Button>
-        )}
       </CardHeader>
       <Divider className="my-4" />
       <CardBody className="space-y-2 max-w-4xl px-6">
-        {editing ? (
-          <ProfileEditForm
-            myProfile={myProfile}
-            onSuccess={() => setEditing(false)}
-            onCancel={() => setEditing(false)}
-          />
-        ) : (
           <div>
             {/* Basic Information Section */}
             <div className="space-y-2">
@@ -166,7 +146,6 @@ export const ProfileCard = ({
               </>
             )}
           </div>
-        )}
       </CardBody>
     </Card>
   );

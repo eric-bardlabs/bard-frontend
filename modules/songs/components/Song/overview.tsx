@@ -604,7 +604,6 @@ export const Overview = (props: {
                         <div className="min-w-[400px]">
                           <ProfileCard
                             myProfile={collaborator.collaborator_profile}
-                            showEdit={false}
                             showEmail={showPii}
                             showRelationships={false}
                             isPopOver={true}
