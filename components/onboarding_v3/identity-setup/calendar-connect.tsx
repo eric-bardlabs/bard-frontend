@@ -20,7 +20,7 @@ import axios from "axios";
 import { EditableCell } from "../editable-cell";
 import { useAuth, useOrganization } from "@clerk/nextjs";
 import { OnboardingFormData } from "@/types/onboarding";
-import { Collaborator, fetchCollaborators } from "@/lib/api/collaborators";
+import { Collaborator, fetchCollaborators, updateCollaborator } from "@/lib/api/collaborators";
 import { useGoogleAuthStore } from "@/lib/google-auth-store";
 
 interface CalendarConnectProps {
@@ -155,28 +155,16 @@ export const CalendarConnect: React.FC<CalendarConnectProps> = ({
 
   const updateCollaboratorMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Record<string, any> }) => {
-      // First, get the current collaborator data to preserve existing fields
-      const currentCollaborator = importedCollaborators.find(c => c.id === id);
-      if (!currentCollaborator) {
-        throw new Error('Collaborator not found');
+      const token = await getToken({ template: "bard-backend" });
+      if (!token) {
+        throw new Error('No auth token available');
       }
 
-      // Create the full payload with all existing fields, merging with the updates
-      const payload = {
-        legalName: currentCollaborator.legal_name,
-        artistName: currentCollaborator.artist_name,
-        email: currentCollaborator.email,
-        region: currentCollaborator.region,
-        pro: currentCollaborator.pro,
-        proId: currentCollaborator.pro_id,
-        profileLink: currentCollaborator.profile_link,
-        bio: currentCollaborator.bio,
-        // Merge the updates
-        ...updates
-      };
-
-      const response = await axios.put(`/api/collaborators/${id}`, payload);
-      return response.data;
+      return await updateCollaborator({
+        token,
+        id,
+        updates,
+      });
     },
     onSuccess: () => {
       // Invalidate and refetch the calendar collaborators query
@@ -234,7 +222,7 @@ export const CalendarConnect: React.FC<CalendarConnectProps> = ({
     }
   };
 
-  const updateCollaborator = (
+  const handleUpdateCollaborator = (
     id: string,
     updates: Record<string, any>
   ) => {
@@ -448,7 +436,7 @@ export const CalendarConnect: React.FC<CalendarConnectProps> = ({
                         <EditableCell
                           initialValue={collaborator.legal_name ?? ""}
                           onSave={(value) => {
-                            updateCollaborator(collaborator.id, { legal_name: value });
+                            handleUpdateCollaborator(collaborator.id, { legal_name: value });
                           }}
                         />
                       </TableCell>
@@ -456,7 +444,7 @@ export const CalendarConnect: React.FC<CalendarConnectProps> = ({
                         <EditableCell
                           initialValue={collaborator.artist_name ?? ""}
                           onSave={(value) => {
-                            updateCollaborator(collaborator.id, { artist_name: value });
+                            handleUpdateCollaborator(collaborator.id, { artist_name: value });
                           }}
                         />
                       </TableCell>
@@ -464,7 +452,7 @@ export const CalendarConnect: React.FC<CalendarConnectProps> = ({
                         <EditableCell
                           initialValue={collaborator.email ?? ""}
                           onSave={(value) => {
-                            updateCollaborator(collaborator.id, { email: value });
+                            handleUpdateCollaborator(collaborator.id, { email: value });
                           }}
                         />
                       </TableCell>

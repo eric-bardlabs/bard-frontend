@@ -160,6 +160,42 @@ interface FetchCollaboratorsParams {
   onError?: (error: any) => void;
 }
 
+interface FetchCollaboratorParams {
+  token: string;
+  id: string;
+  onSuccess?: (data: Collaborator) => void;
+  onError?: (error: any) => void;
+}
+
+export const fetchCollaborator = async ({
+  token,
+  id,
+  onSuccess,
+  onError,
+}: FetchCollaboratorParams): Promise<Collaborator> => {
+  try {
+    const response = await axios.get<Collaborator>(
+      `${API_BASE_URL}/collaborators/${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (onSuccess) {
+      onSuccess(response.data);
+    }
+
+    return response.data;
+  } catch (error) {
+    if (onError) {
+      onError(error);
+    }
+    throw error;
+  }
+};
+
 export const fetchCollaborators = async ({
   token,
   limit = 500,

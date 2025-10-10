@@ -413,7 +413,6 @@ const Collaborators = () => {
           <ModalContent>
             <ProfileCard
               myProfile={items[viewingIndex ?? 0]}
-              showEdit={false}
               subHeaderOverride="   "
               headerOverride={`${items[viewingIndex ?? 0]?.artist_name || items[viewingIndex ?? 0]?.legal_name || ""}'s Profile`}
               showRelationships={true}
