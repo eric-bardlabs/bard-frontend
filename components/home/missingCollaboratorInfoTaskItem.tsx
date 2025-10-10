@@ -11,11 +11,11 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
 import { toast } from "sonner";
 import clsx from "clsx";
 import { useAuth } from "@clerk/nextjs";
 import { dismissReminder } from "@/lib/api/reminders";
+import { updateCollaborator, fetchCollaborator } from "@/lib/api/collaborators";
 
 type SongTask = {
   id: string;
@@ -53,10 +53,16 @@ export const MissingCollaboratorInfoTaskItem: React.FC<SongTaskItemProps> = ({
 
   const collaboratorProfileQuery = useQuery({
     queryKey: ["collaboratorProfile", task.content.collaboratorProfileId],
-    queryFn: () =>
-      axios
-        .get(`/api/collaborators/${task.content.collaboratorProfileId}`)
-        .then((res) => res.data),
+    queryFn: async () => {
+      const token = await getToken({ template: "bard-backend" });
+      if (!token) {
+        throw new Error("No auth token available");
+      }
+      return await fetchCollaborator({
+        token,
+        id: task.content.collaboratorProfileId,
+      });
+    },
     enabled: isOpen, // Only fetch when the modal is open
   });
 
@@ -64,10 +70,10 @@ export const MissingCollaboratorInfoTaskItem: React.FC<SongTaskItemProps> = ({
     if (collaboratorProfileQuery.data) {
       const profile = collaboratorProfileQuery.data;
       setCollaboratorData({
-        legalName: profile.legalName || "",
-        artistName: profile.artistName || "",
+        legalName: profile.legal_name || "",
+        artistName: profile.artist_name || "",
         pro: profile.pro || "",
-        proId: profile.proId || "",
+        proId: profile.pro_id || "",
       });
     }
   }, [collaboratorProfileQuery.data]);
@@ -89,13 +95,26 @@ export const MissingCollaboratorInfoTaskItem: React.FC<SongTaskItemProps> = ({
     }));
   };
 
-  const updateCollaborator = useMutation({
+  const updateCollaboratorMutation = useMutation({
     mutationFn: async () => {
-      return axios
-        .put(`/api/collaborators/${task.content.collaboratorProfileId}`, {
-          ...collaboratorData,
-        })
-        .then((res) => res.data);
+      const token = await getToken({ template: "bard-backend" });
+      if (!token) {
+        throw new Error("No auth token available");
+      }
+      
+      // Convert frontend field names to backend field names
+      const updates = {
+        legal_name: collaboratorData.legalName,
+        artist_name: collaboratorData.artistName,
+        pro: collaboratorData.pro,
+        pro_id: collaboratorData.proId,
+      };
+      
+      return await updateCollaborator({
+        token,
+        id: task.content.collaboratorProfileId,
+        updates,
+      });
     },
     mutationKey: ["updateCollaborator"],
     onSuccess: async (data) => {
@@ -135,7 +154,7 @@ export const MissingCollaboratorInfoTaskItem: React.FC<SongTaskItemProps> = ({
 
   const onSubmit = async () => {
     setIsSubmitting(true);
-    updateCollaborator.mutate();
+    updateCollaboratorMutation.mutate();
   };
 
   const missingFields: string[] = [];
