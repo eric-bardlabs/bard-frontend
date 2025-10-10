@@ -4,28 +4,46 @@ import {
   AutocompleteSection,
 } from "@heroui/react";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import { SearchIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
+import { globalSearch } from "@/lib/api/organization";
 
 const GlobalSearch = ({ organizationId }) => {
   const router = useRouter();
+  const { getToken } = useAuth();
 
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const globalSearch = useQuery({
-    queryKey: ["globalSearch", organizationId, search],
-    queryFn: () =>
-      axios
-        .get(
-          `/api/global_search?organizationId=${organizationId}&search=${search}`
-        )
-        .then((res) => res.data),
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const globalSearchQuery = useQuery({
+    queryKey: ["globalSearch", organizationId, debouncedSearch],
+    queryFn: async () => {
+      if (!debouncedSearch.trim()) {
+        return { sessions: [], tracks: [] };
+      }
+      
+      const token = await getToken({ template: "bard-backend" });
+      if (!token) {
+        throw new Error("No auth token available");
+      }
+      
+      return await globalSearch({ token, search: debouncedSearch });
+    },
+    enabled: !!debouncedSearch.trim(), // Only run query when there's a debounced search term
   });
 
-  const sessions = globalSearch.data?.data?.[0] ?? [];
-  const tracks = globalSearch.data?.data?.[1] ?? [];
+  const sessions = globalSearchQuery.data?.sessions ?? [];
+  const tracks = globalSearchQuery.data?.tracks ?? [];
 
   return (
     <Autocomplete
@@ -33,7 +51,7 @@ const GlobalSearch = ({ organizationId }) => {
       startContent={<SearchIcon />}
       placeholder="Search"
       autoFocus={false}
-      isLoading={globalSearch.isLoading}
+      isLoading={globalSearchQuery.isLoading}
       inputValue={search}
       defaultFilter={() => true}
       onInputChange={(value) => setSearch(value)}
