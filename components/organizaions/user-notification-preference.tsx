@@ -1,9 +1,9 @@
 import React from "react";
 import { Checkbox, CheckboxGroup, Spinner } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { NotificationSettings, UserNotificationSettings } from "@/lib/api/organization";
-// import { updateUserNotificationPreference } from "../api/notifications";
+import { NotificationSettings, UserNotificationSettings, updateNotificationSettings } from "@/lib/api/organization";
 import { addToast } from "@heroui/react";
+import { useAuth } from "@clerk/nextjs";
 
 interface UserNotificationPreferenceProps {
   user_notification_setting: UserNotificationSettings;
@@ -12,6 +12,7 @@ interface UserNotificationPreferenceProps {
 export const UserNotificationPreference: React.FC<
   UserNotificationPreferenceProps
 > = ({ user_notification_setting }) => {
+  const { getToken } = useAuth();
   const [preferences, setPreferences] = React.useState<NotificationSettings>(
     {
       email: user_notification_setting.notification_settings?.email ?? false,
@@ -30,23 +31,16 @@ export const UserNotificationPreference: React.FC<
     const newPreferences = { ...preferences, [key]: checked };
 
     try {
-      const response = await fetch(
-        `/api/organizations/membership/${user_notification_setting.user_id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            notification_settings: newPreferences,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Something went wrong");
+      const token = await getToken({ template: "bard-backend" });
+      if (!token) {
+        throw new Error("No auth token available");
       }
+
+      await updateNotificationSettings({
+        token,
+        user_id: user_notification_setting.user_id,
+        notification_settings: newPreferences,
+      });
 
       setPreferences(newPreferences);
 

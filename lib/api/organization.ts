@@ -77,3 +77,42 @@ export async function globalSearch({
 
   return response.json();
 }
+
+export interface UpdateNotificationSettingsRequest {
+  user_id: string;
+  notification_settings: NotificationSettings;
+}
+
+export interface UpdateNotificationSettingsResponse {
+  success: boolean;
+  message: string;
+}
+
+export async function updateNotificationSettings({
+  token,
+  user_id,
+  notification_settings,
+}: {
+  token: string;
+  user_id: string;
+  notification_settings: NotificationSettings;
+}): Promise<UpdateNotificationSettingsResponse> {
+  const response = await fetch(`${BACKEND_HOST}/organization/notification-settings`, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      user_id,
+      notification_settings,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Unknown error" }));
+    throw new Error(error.error || `HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  return response.json();
+}
