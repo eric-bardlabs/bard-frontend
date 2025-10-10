@@ -8,7 +8,7 @@ import axios from "axios";
 import { useOrganization, useUser, useAuth } from "@clerk/nextjs";
 import { fetchTracks } from "@/lib/api/tracks";
 import { fetchCollaborators } from "@/lib/api/collaborators";
-import { STEPS } from "@/types/onboarding";
+import { STEPS } from "@/components/types/onboarding";
 
 interface ReviewAndSaveProps {
   onNavigateToStep?: (stepId: number) => void;

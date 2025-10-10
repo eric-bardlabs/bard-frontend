@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, Checkbox, Tooltip } from "@heroui/react";
-import { SplitType } from "@/types/onboarding";
+import { SplitType } from "@/components/types/onboarding";
 import { SplitsTable } from "@/components/home/splitsTable";
 import { SplitsView } from "./splits-view";
 import { updateTrack } from "@/lib/api/tracks";

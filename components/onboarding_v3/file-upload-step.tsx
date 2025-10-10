@@ -1,7 +1,7 @@
 import React from "react";
 import { Button, Tooltip } from "@heroui/react";
 import FileUpload from "./file-upload";
-import { OnboardingFormData } from "@/types/onboarding";
+import { OnboardingFormData } from "@/components/types/onboarding";
 
 interface FileUploadStepProps {
   onboardingData: OnboardingFormData;

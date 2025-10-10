@@ -10,7 +10,7 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { CalendarConnect } from "./identity-setup/calendar-connect";
-import { OnboardingFormData } from "@/types/onboarding";
+import { OnboardingFormData } from "@/components/types/onboarding";
 
 interface CalendarConnectStepProps {
   onboardingData: OnboardingFormData;

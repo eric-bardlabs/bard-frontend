@@ -6,7 +6,7 @@ import axios from "axios";
 import { toast } from "sonner";
 import { useOrganizationList, useSession } from "@clerk/nextjs";
 import { CollaboratorBasicData } from "@/components/collaborator/CollaboratorBasicFields";
-import { BasicInformationData } from "@/types/onboarding"
+import { BasicInformationData } from "@/components/types/onboarding"
 
 interface BasicInformationProps {
   onNext: () => void;

@@ -24,7 +24,7 @@ import { Icon } from "@iconify/react";
 import { useMutation, useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { useOrganization, useAuth } from "@clerk/nextjs";
 import { importFromSpotify } from "@/lib/api/spotify";
-import { OnboardingFormData } from "@/types/onboarding";
+import { OnboardingFormData } from "@/components/types/onboarding";
 import { Track, TrackCollaborator, fetchTracks } from "@/lib/api/tracks";
 import { Album } from "@/lib/api/albums";
 

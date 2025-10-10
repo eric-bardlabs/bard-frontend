@@ -19,7 +19,7 @@ import { useMutation, useInfiniteQuery, useQueryClient } from "@tanstack/react-q
 import axios from "axios";
 import { EditableCell } from "../editable-cell";
 import { useAuth, useOrganization } from "@clerk/nextjs";
-import { OnboardingFormData } from "@/types/onboarding";
+import { OnboardingFormData } from "@/components/types/onboarding";
 import { Collaborator, fetchCollaborators, updateCollaborator } from "@/lib/api/collaborators";
 import { useGoogleAuthStore } from "@/lib/google-auth-store";
 

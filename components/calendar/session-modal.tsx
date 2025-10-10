@@ -23,7 +23,7 @@ import { createSession, updateSession, deleteSession, SessionTrack, SessionColla
 import { toast } from "sonner";
 import { CollaboratorMultiSelect } from "@/components/collaborator/collaboratorMultiSelect";
 import { CollaboratorSelection } from "@/components/collaborator/types";
-import { TrackMultiSelect, TrackOption } from "@/components/track-multi-select";
+import { TrackMultiSelect, TrackOption } from "@/components/songs/track-multi-select";
 
 export const SessionModal: React.FC = () => {
   const { organization } = useOrganization();

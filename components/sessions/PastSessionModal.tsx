@@ -16,7 +16,7 @@ import {
   Spinner,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { TrackMultiSelect, TrackOption } from "@/components/track-multi-select";
+import { TrackMultiSelect, TrackOption } from "@/components/songs/track-multi-select";
 import { CollaboratorMultiSelect } from "@/components/collaborator/collaboratorMultiSelect";
 import { CollaboratorSelection } from "@/components/collaborator/types";
 import { SplitsTable } from "../home/splitsTable";

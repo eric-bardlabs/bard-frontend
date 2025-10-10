@@ -11,7 +11,7 @@ import { Icon } from "@iconify/react";
 import { OnboardingCollaboratorModal } from "@/components/collaborator/OnboardingCollaboratorModal";
 import { OrganizationMembersList } from "./organization-members-list";
 import { useQueryClient } from "@tanstack/react-query";
-import { BasicInformationData } from "@/types/onboarding";
+import { BasicInformationData } from "@/components/types/onboarding";
 import { typeid } from "typeid-js";
 
 interface ArtistAndOrganizationProps {

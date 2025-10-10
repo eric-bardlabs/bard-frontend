@@ -4,7 +4,7 @@ import { Icon } from "@iconify/react";
 import { useFileUpload } from "./file-upload-context";
 import { createClient } from "@/api_clients/supabase/component";
 import { useAuth } from "@clerk/nextjs";
-import { OnboardingFormData } from "@/types/onboarding";
+import { OnboardingFormData } from "@/components/types/onboarding";
 
 // Add props for data and onUpdate
 interface FileUploaderProps {

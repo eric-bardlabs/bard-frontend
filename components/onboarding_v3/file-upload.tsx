@@ -2,7 +2,7 @@ import React from "react";
 import { FileUploader } from "./file-uploader";
 import { UploadHistory } from "./upload-history";
 import { FileUploadProvider } from "./file-upload-context";
-import { OnboardingFormData } from "@/types/onboarding";
+import { OnboardingFormData } from "@/components/types/onboarding";
 
 export default function FileUpload({
   onboardingData,

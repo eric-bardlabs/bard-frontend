@@ -1,6 +1,6 @@
 import React from "react";
 import { CatalogInputModal } from "./catalog-input-modal";
-import { OnboardingFormData } from "@/types/onboarding";
+import { OnboardingFormData } from "@/components/types/onboarding";
 
 interface CatalogInputStepProps {
   onboardingData: OnboardingFormData;

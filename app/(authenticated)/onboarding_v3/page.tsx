@@ -10,7 +10,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useImmer } from "use-immer";
 import { SongEntry } from "../../../components/onboarding_v3/song-entry";
-import { OnboardingFormData, STEPS } from "@/types/onboarding";
+import { OnboardingFormData, STEPS } from "@/components/types/onboarding";
 import { BasicInformation } from "../../../components/onboarding_v3/basic-information";
 import { CatalogInputStep } from "../../../components/onboarding_v3/catalog-input-step";
 import { CatalogReviewStep } from "../../../components/onboarding_v3/catalog-review-step";

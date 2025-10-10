@@ -10,7 +10,7 @@ import {
   Chip,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { TrackMultiSelect, TrackOption } from "@/components/track-multi-select";
+import { TrackMultiSelect, TrackOption } from "@/components/songs/track-multi-select";
 import {
   CollaboratorMultiSelect,
 } from "@/components/collaborator/collaboratorMultiSelect";

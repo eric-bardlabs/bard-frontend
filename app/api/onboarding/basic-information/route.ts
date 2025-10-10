@@ -8,7 +8,7 @@ import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
 import { eq, and, sql, isNull, ne, or } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { typeid } from "typeid-js";
-import { BasicInformationData } from "@/types/onboarding";
+import { BasicInformationData } from "@/components/types/onboarding";
 
 export async function POST(request: Request) {
   try {

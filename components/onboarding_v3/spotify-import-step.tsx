@@ -1,7 +1,7 @@
 import React from "react";
 import { Button, Tooltip } from "@heroui/react";
 import { SpotifyImport } from "./identity-setup/spotify-import";
-import { OnboardingFormData } from "@/types/onboarding";
+import { OnboardingFormData } from "@/components/types/onboarding";
 
 
 interface SpotifyImportStepProps {
