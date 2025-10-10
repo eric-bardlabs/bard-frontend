@@ -1,11 +1,9 @@
 "use client";
 
 import React from "react";
-import { ScrollShadow, Breadcrumbs, BreadcrumbItem } from "@heroui/react";
-import { Spinner } from "@/components/ui/spinner";
+import { ScrollShadow, Breadcrumbs, BreadcrumbItem, Spinner } from "@heroui/react";
 
 import { useQuery } from "@tanstack/react-query";
-import { useOrganization } from "@clerk/nextjs";
 
 import { useParams, useRouter } from "next/navigation";
 import SongDetails from "@/components/songs/SongDetails";
@@ -31,7 +29,7 @@ export default function SingleSong() {
   if (songQuery.isLoading) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center">
-        <Spinner size={48} />
+        <Spinner size="md" />
       </div>
     );
   }

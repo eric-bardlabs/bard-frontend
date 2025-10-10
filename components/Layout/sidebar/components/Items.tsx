@@ -1,6 +1,5 @@
 "use client";
 import { useUserContext } from "@/components/UserContext";
-import { Badge } from "@/components/ui/badge";
 import { useClerk } from "@clerk/nextjs";
 
 import {
@@ -8,7 +7,6 @@ import {
   Home,
   LogOut,
   LucideIcon,
-  Shield,
   GroupIcon,
   UserRound,
   Users,

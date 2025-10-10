@@ -11,12 +11,12 @@ import {
   Chip,
   Checkbox,
   DatePicker,
+  Spinner,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRouter } from "next/navigation";
 import { useOrganization, useAuth } from "@clerk/nextjs";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
-import { Spinner } from "@/components/ui/spinner";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 import { STATUSES } from "@/components/songs/types/song";
@@ -216,7 +216,7 @@ const Songs: React.FC = () => {
   if (isInitialLoading) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center">
-        <Spinner size={48} />
+        <Spinner size="md" />
       </div>
     );
   }
@@ -485,7 +485,7 @@ const Songs: React.FC = () => {
           <div className="bg-content1 rounded-lg p-4 shadow-sm">
             {isLoadingTracks ? (
               <div className="flex justify-center items-center py-12">
-                <Spinner size={32} />
+                <Spinner size="md" />
                 <span className="ml-2 text-default-500">Loading tracks...</span>
               </div>
             ) : (
@@ -501,7 +501,7 @@ const Songs: React.FC = () => {
           {/* Infinite Scroll Loading Indicator */}
           {isLoadingMore && (
             <div className="flex justify-center items-center py-4">
-              <Spinner size={24} />
+              <Spinner size="md" />
               <span className="ml-2 text-default-500 text-sm">Loading more songs...</span>
             </div>
           )}
