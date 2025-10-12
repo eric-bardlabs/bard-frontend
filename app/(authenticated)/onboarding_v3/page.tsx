@@ -9,6 +9,7 @@ import { SplitsEntry } from "@/components/onboarding_v3/splits-entry";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { useImmer } from "use-immer";
+import { useAuth } from "@clerk/nextjs";
 import { SongEntry } from "../../../components/onboarding_v3/song-entry";
 import { OnboardingFormData, STEPS } from "@/components/types/onboarding";
 import { BasicInformation } from "@/components/onboarding_v3/basic-information";
@@ -18,12 +19,14 @@ import { SpotifyImportStep } from "@/components/onboarding_v3/spotify-import-ste
 import { CalendarConnectStep } from "@/components/onboarding_v3/calendar-connect-step";
 import { FileUploadStep } from "@/components/onboarding_v3/file-upload-step";
 import { useClerk } from "@clerk/nextjs";
+import { saveInitialData } from "@/lib/api/onboarding";
 
 export default function OnboardingV3() {
   const [currentStep, setCurrentStep] = React.useState(0);
   const [isInitialized, setIsInitialized] = React.useState(false);
 
   const { signOut } = useClerk();
+  const { getToken } = useAuth();
 
   const [formData, updateFormData] = useImmer<OnboardingFormData>({
     googleSessionId: null,
@@ -101,9 +104,22 @@ export default function OnboardingV3() {
       data: OnboardingFormData;
       onSuccess?: () => void;
     }) => {
-      return axios
-        .post("/api/onboarding/initial-data", data.data)
-        .then((res) => res.data);
+      const token = await getToken({ template: "bard-backend" });
+      if (!token) {
+        throw new Error("No auth token available");
+      }
+
+      return await saveInitialData({
+        token,
+        data: {
+          googleSessionId: data.data.googleSessionId || undefined,
+          links: data.data.links,
+          uploadedFiles: data.data.uploadedFiles,
+          maxStep: data.data.maxStep,
+          catalogModalCompleted: data.data.catalogModalCompleted || false,
+          reviewAndSaveModalCompleted: data.data.reviewAndSaveModalCompleted || false,
+        },
+      });
     },
     onSuccess: (data, variables) => {
       // Only invalidate if the mutation was successful

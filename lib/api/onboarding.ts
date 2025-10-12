@@ -84,3 +84,50 @@ export async function saveBasicInformation({
 
   return response.json();
 }
+
+export interface InitialDataRequest {
+  googleSessionId?: string;
+  links: string[];
+  uploadedFiles: string[];
+  maxStep: number;
+  catalogModalCompleted: boolean;
+  reviewAndSaveModalCompleted: boolean;
+}
+
+export interface InitialDataResponse {
+  success: boolean;
+}
+
+export async function saveInitialData({
+  token,
+  data,
+}: {
+  token: string;
+  data: InitialDataRequest;
+}): Promise<InitialDataResponse> {
+  // Convert camelCase to snake_case for backend
+  const backendData = {
+    google_session_id: data.googleSessionId,
+    links: data.links,
+    uploaded_files: data.uploadedFiles,
+    max_step: data.maxStep,
+    catalog_modal_completed: data.catalogModalCompleted,
+    review_and_save_modal_completed: data.reviewAndSaveModalCompleted,
+  };
+
+  const response = await fetch(`${BACKEND_HOST}/onboarding/initial-data`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(backendData),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Unknown error" }));
+    throw new Error(error.error || `HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  return response.json();
+}
