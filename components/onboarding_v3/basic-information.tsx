@@ -2,11 +2,10 @@ import React from "react";
 import { Button, Tooltip } from "@heroui/react";
 import ArtistAndOrganization from "./identity-setup/artist-and-organization";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
 import { toast } from "sonner";
-import { useOrganizationList, useSession } from "@clerk/nextjs";
-import { CollaboratorBasicData } from "@/components/collaborator/CollaboratorBasicFields";
-import { BasicInformationData } from "@/components/types/onboarding"
+import { useOrganizationList, useSession, useAuth } from "@clerk/nextjs";
+import { BasicInformationData } from "@/components/types/onboarding";
+import { fetchBasicInformation, OrganizationMember, saveBasicInformation } from "@/lib/api/onboarding";
 
 interface BasicInformationProps {
   onNext: () => void;
@@ -17,6 +16,7 @@ export const BasicInformation: React.FC<BasicInformationProps> = ({
 }) => {
   const { setActive } = useOrganizationList();
   const { session } = useSession();
+  const { getToken } = useAuth();
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [hasValidationErrors, setHasValidationErrors] = React.useState(false);
@@ -24,21 +24,24 @@ export const BasicInformation: React.FC<BasicInformationProps> = ({
   // Local state for the form data
   const [formData, setFormData] = React.useState<BasicInformationData>({
     identity: {
-      legalName: "",
-      artistName: "",
+      legal_name: "",
+      artist_name: "",
       organization: "",
       pro: "",
-      proId: "",
+      pro_id: "",
     },
-    organizationMembers: [],
+    organization_members: [],
   });
 
   // Fetch existing basic information data
   const { data: existingData, isLoading: isLoadingExisting } = useQuery({
     queryKey: ["basicInformation"],
     queryFn: async () => {
-      const response = await axios.get("/api/onboarding/basic-information");
-      return response.data;
+      const token = await getToken({ template: "bard-backend" });
+      if (!token) {
+        throw new Error("No auth token available");
+      }
+      return await fetchBasicInformation({ token });
     },
   });
   
@@ -47,23 +50,23 @@ export const BasicInformation: React.FC<BasicInformationProps> = ({
     if (existingData) {
       setFormData({
         identity: existingData.identity || {
-          legalName: "",
-          artistName: "",
+          legal_name: "",
+          artist_name: "",
           organization: "",
           pro: "",
-          proId: "",
+          pro_id: "",
         },
-        organizationMembers: existingData.organizationMembers?.map((member: any) => ({
+        organization_members: existingData.organization_members?.map((member: OrganizationMember) => ({
           id: member.id,
-          legalName: member.legalName || "",
-          artistName: member.artistName || "",
+          legal_name: member.legal_name || "",
+          artist_name: member.artist_name || "",
           email: member.email || "",
           region: member.region || "",
           pro: member.pro || "",
-          proId: member.proId || "",
-          profileLink: member.profileLink || "",
+          pro_id: member.pro_id || "",
+          profile_link: member.profile_link || "",
           bio: member.bio || "",
-          phoneNumber: member.phoneNumber || "",
+          phone_number: member.phone_number || "",
         })) || [],
       });
     }
@@ -77,18 +80,30 @@ export const BasicInformation: React.FC<BasicInformationProps> = ({
   // Save basic information mutation
   const saveBasicInfo = useMutation({
     mutationFn: async () => {
-      const response = await axios.post(
-        "/api/onboarding/basic-information",
-        formData
-      );
+      const token = await getToken({ template: "bard-backend" });
+      if (!token) {
+        throw new Error("No auth token available");
+      }
 
-      return response.data;
+      // Convert frontend data format to API format
+      const apiData = {
+        identity: {
+          legal_name: formData.identity.legal_name,
+          artist_name: formData.identity.artist_name,
+          organization: formData.identity.organization,
+          pro: formData.identity.pro,
+          pro_id: formData.identity.pro_id,
+        },
+        organization_members: formData.organization_members,
+      };
+
+      return await saveBasicInformation({ token, data: apiData });
     },
     onSuccess: async (responseData) => {
-      if (responseData.organizationId && setActive && session?.id) {
+      if (responseData.organization_id && setActive && session?.id) {
         await setActive({
           session: session.id,
-          organization: responseData.organizationId,
+          organization: responseData.organization_id,
         });
       }
       // Move to next step
@@ -97,7 +112,7 @@ export const BasicInformation: React.FC<BasicInformationProps> = ({
     onError: (error: any) => {
       console.error("Error saving basic information:", error);
       toast.error(
-        error.response?.data?.error || "Failed to save basic information"
+        error.message || "Failed to save basic information"
       );
     },
   });
@@ -105,11 +120,11 @@ export const BasicInformation: React.FC<BasicInformationProps> = ({
   const handleSave = () => {
     // Validate required fields
     if (
-      !formData.identity.legalName.trim() ||
+      !formData.identity.legal_name.trim() ||
       !formData.identity.organization.trim()
     ) {
       const newErrors: Record<string, string> = {};
-      if (!formData.identity.legalName.trim()) {
+      if (!formData.identity.legal_name.trim()) {
         newErrors.legalNames = "Legal name is required";
       }
       if (!formData.identity.organization.trim()) {

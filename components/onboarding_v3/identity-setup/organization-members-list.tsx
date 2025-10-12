@@ -1,9 +1,10 @@
 import React from "react";
 import { Avatar, Button, Chip, Input, Select, SelectItem } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { OrganizationMember } from "@/lib/api/onboarding";
 
 interface OrganizationMembersListProps {
-  members: any[];
+  members: OrganizationMember[];
   onRemove: (id: string) => void;
 }
 
@@ -36,15 +37,15 @@ export const OrganizationMembersList: React.FC<
           <div className="flex justify-between items-center">
             <div className="space-y-1">
               <div className="flex items-center gap-4">
-                <Avatar name={member.legalName} size="md" />
+                <Avatar name={member.legal_name} size="md" />
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="font-medium">
-                      {member.legalName || member.artistName}
+                      {member.legal_name || member.artist_name}
                     </p>
-                    {member.artistName && (
+                    {member.artist_name && (
                       <Chip size="sm" variant="flat" color="primary">
-                        {member.artistName}
+                        {member.artist_name}
                       </Chip>
                     )}
                   </div>
@@ -56,7 +57,7 @@ export const OrganizationMembersList: React.FC<
               isIconOnly
               variant="light"
               color="danger"
-              onPress={() => onRemove(member.id)}
+              onPress={() => onRemove(member.id || "")}
               aria-label="Remove member"
               size="sm"
             >

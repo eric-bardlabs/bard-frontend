@@ -33,21 +33,21 @@ export default function ArtistAndOrganization({
   // Validate all fields whenever data changes
   useEffect(() => {
     const hasRequiredFieldErrors =
-      !data.identity?.legalName?.trim() || !data.identity?.organization?.trim();
+      !data.identity?.legal_name?.trim() || !data.identity?.organization?.trim();
     const hasProIdError = proIdError !== "";
     onValidationChange?.(hasRequiredFieldErrors || hasProIdError);
   }, [
-    data.identity?.legalName,
+    data.identity?.legal_name,
     data.identity?.organization,
     proIdError,
     onValidationChange,
   ]);
 
-  const orgCollaborators = data.organizationMembers;
+  const orgCollaborators = data.organization_members;
 
   const removeCollaborator = (id: string) => {
     const newData = { ...data };
-    newData.organizationMembers = newData.organizationMembers?.filter(
+    newData.organization_members = newData.organization_members?.filter(
       (collaborator) => collaborator.id !== id
     );
     onUpdate(newData);
@@ -89,13 +89,13 @@ export default function ArtistAndOrganization({
               <Input
                 label="Legal Name"
                 placeholder="Enter your legal name"
-                value={data.identity?.legalName || ""}
+                value={data.identity?.legal_name || ""}
                 onValueChange={(value) =>
                   onUpdate({
                     ...data,
                     identity: {
                       ...data.identity,
-                      legalName: value,
+                      legal_name: value,
                     },
                   })
                 }
@@ -105,13 +105,13 @@ export default function ArtistAndOrganization({
               <Input
                 label="Artist Name"
                 placeholder="Enter your artist name"
-                value={data.identity?.artistName || ""}
+                value={data.identity?.artist_name || ""}
                 onValueChange={(value) =>
                   onUpdate({
                     ...data,
                     identity: {
                       ...data.identity,
-                      artistName: value,
+                      artist_name: value,
                     },
                   })
                 }
@@ -141,14 +141,14 @@ export default function ArtistAndOrganization({
               <Input
                 label="PRO ID"
                 placeholder="Enter your PRO ID number"
-                value={data.identity?.proId || ""}
+                value={data.identity?.pro_id || ""}
                 onValueChange={(value) => {
                   validateProId(value);
                   onUpdate({
                     ...data,
                     identity: {
                       ...data.identity,
-                      proId: value,
+                      pro_id: value,
                     },
                   });
                 }}
@@ -221,20 +221,20 @@ export default function ArtistAndOrganization({
               // Add to organizationMembers state
               onUpdate({
                 ...data,
-                organizationMembers: [
-                  ...(data.organizationMembers || []),
+                organization_members: [
+                  ...(data.organization_members || []),
                   {
                     id: typeid("collabprofile").toString(),
-                    legalName: collaboratorData.legal_name,
-                    artistName: collaboratorData.artist_name,
+                    legal_name: collaboratorData.legal_name,
+                    artist_name: collaboratorData.artist_name,
                     email: collaboratorData.email,
                     region: collaboratorData.region,
                     pro: collaboratorData.pro,
-                    proId: collaboratorData.pro_id,
-                    profileLink: collaboratorData.profile_link,
+                    pro_id: collaboratorData.pro_id,
+                    profile_link: collaboratorData.profile_link,
                     bio: collaboratorData.bio,
-                    phoneNumber: collaboratorData.phone_number,
-                    initialSource: collaboratorData.initial_source,
+                    phone_number: collaboratorData.phone_number,
+                    initial_source: collaboratorData.initial_source,
                   },
                 ],
               });

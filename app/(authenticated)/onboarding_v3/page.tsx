@@ -3,21 +3,21 @@
 import React from "react";
 import { Progress, Button, Card, Spinner } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { CollaboratorEntry } from "../../../components/onboarding_v3/collaborator-entry";
-import { ReviewAndSave } from "../../../components/onboarding_v3/review-and-save";
-import { SplitsEntry } from "../../../components/onboarding_v3/splits-entry";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { CollaboratorEntry } from "@/components/onboarding_v3/collaborator-entry";
+import { ReviewAndSave } from "@/components/onboarding_v3/review-and-save";
+import { SplitsEntry } from "@/components/onboarding_v3/splits-entry";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { useImmer } from "use-immer";
 import { SongEntry } from "../../../components/onboarding_v3/song-entry";
 import { OnboardingFormData, STEPS } from "@/components/types/onboarding";
-import { BasicInformation } from "../../../components/onboarding_v3/basic-information";
-import { CatalogInputStep } from "../../../components/onboarding_v3/catalog-input-step";
-import { CatalogReviewStep } from "../../../components/onboarding_v3/catalog-review-step";
-import { SpotifyImportStep } from "../../../components/onboarding_v3/spotify-import-step";
-import { CalendarConnectStep } from "../../../components/onboarding_v3/calendar-connect-step";
-import { FileUploadStep } from "../../../components/onboarding_v3/file-upload-step";
-import { useClerk, useAuth, useOrganization } from "@clerk/nextjs";
+import { BasicInformation } from "@/components/onboarding_v3/basic-information";
+import { CatalogInputStep } from "@/components/onboarding_v3/catalog-input-step";
+import { CatalogReviewStep } from "@/components/onboarding_v3/catalog-review-step";
+import { SpotifyImportStep } from "@/components/onboarding_v3/spotify-import-step";
+import { CalendarConnectStep } from "@/components/onboarding_v3/calendar-connect-step";
+import { FileUploadStep } from "@/components/onboarding_v3/file-upload-step";
+import { useClerk } from "@clerk/nextjs";
 
 export default function OnboardingV3() {
   const [currentStep, setCurrentStep] = React.useState(0);

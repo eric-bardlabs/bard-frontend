@@ -10,24 +10,24 @@ export interface OnboardingFormData {
 
 export interface BasicInformationData {
   identity: {
-    legalName: string;
-    artistName: string;
+    legal_name: string;
+    artist_name: string;
     organization: string;
     pro: string;
-    proId: string;
+    pro_id: string;
   };
-  organizationMembers?: {
+  organization_members?: {
     id?: string;
-    legalName: string;
-    artistName: string;
+    legal_name: string;
+    artist_name: string;
     email?: string;
     pro?: string;
-    proId?: string;
+    pro_id?: string;
     region?: string;
-    profileLink?: string;
+    profile_link?: string;
     bio?: string;
-    phoneNumber?: string;
-    initialSource?: string;
+    phone_number?: string;
+    initial_source?: string;
   }[];
 }
 
