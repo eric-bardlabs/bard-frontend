@@ -131,3 +131,28 @@ export async function saveInitialData({
 
   return response.json();
 }
+
+export interface FinishOnboardingResponse {
+  success: boolean;
+}
+
+export async function finishOnboarding({
+  token,
+}: {
+  token: string;
+}): Promise<FinishOnboardingResponse> {
+  const response = await fetch(`${BACKEND_HOST}/onboarding/finish`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Unknown error" }));
+    throw new Error(error.error || `HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  return response.json();
+}

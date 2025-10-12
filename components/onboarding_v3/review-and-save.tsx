@@ -4,10 +4,10 @@ import { Icon } from "@iconify/react";
 import { ProjectSummary } from "./project-summary";
 import { MetricCard } from ".//metric-card";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import { useOrganization, useUser, useAuth } from "@clerk/nextjs";
 import { fetchTracks } from "@/lib/api/tracks";
 import { fetchCollaborators } from "@/lib/api/collaborators";
+import { finishOnboarding } from "@/lib/api/onboarding";
 import { STEPS } from "@/components/types/onboarding";
 
 interface ReviewAndSaveProps {
@@ -81,10 +81,14 @@ export const ReviewAndSave: React.FC<ReviewAndSaveProps> = ({
   const songsWithSplits = splitsTracksData?.total || 0;
   const isLoading = tracksLoading || collaboratorsLoading || splitsLoading;
 
-  const finishOnboarding = useMutation({
+  const finishOnboardingMutation = useMutation({
     mutationKey: ["finishOnboarding"],
     mutationFn: async () => {
-      return axios.post("/api/onboarding/finish");
+      const token = await getToken({ template: "bard-backend" });
+      if (!token) {
+        throw new Error("No auth token available");
+      }
+      return await finishOnboarding({ token });
     },
     onSuccess: async (response) => {
       const host = window.location.protocol + "//" + window.location.host;
@@ -186,11 +190,11 @@ export const ReviewAndSave: React.FC<ReviewAndSaveProps> = ({
             <Button
               color="primary"
               size="lg"
-              onPress={() => finishOnboarding.mutate()}
-              disabled={finishOnboarding.isPending}
+              onPress={() => finishOnboardingMutation.mutate()}
+              disabled={finishOnboardingMutation.isPending}
               endContent={<Icon icon="lucide:arrow-right" />}
             >
-              {finishOnboarding.isPending
+              {finishOnboardingMutation.isPending
                 ? "Processing..."
                 : "Go to Homepage"}
             </Button>
