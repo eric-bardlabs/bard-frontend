@@ -1,1 +1,0 @@
-ALTER TABLE "contract" ADD COLUMN "display_name" text;

@@ -9,6 +9,7 @@ import { fetchTracks } from "@/lib/api/tracks";
 import { fetchCollaborators } from "@/lib/api/collaborators";
 import { finishOnboarding } from "@/lib/api/onboarding";
 import { STEPS } from "@/components/types/onboarding";
+import { useUserContext } from "@/components/UserContext";
 
 interface ReviewAndSaveProps {
   onNavigateToStep?: (stepId: number) => void;
@@ -19,10 +20,10 @@ export const ReviewAndSave: React.FC<ReviewAndSaveProps> = ({
 }) => {
   const { getToken } = useAuth();
   const { organization } = useOrganization();
-  const { user } = useUser();
+  const { user: userData, isLoading: isLoadingUserData, refetch: refetchUserData } = useUserContext();
   const organizationId = organization?.id;
 
-  const projectName = organization?.name || user?.fullName || "Untitled Project";
+  const projectName = organization?.name || userData?.first_name + " " + userData?.last_name || "Untitled Project";
 
   // Fetch total tracks count
   const { data: tracksData, isLoading: tracksLoading } = useQuery({
@@ -91,6 +92,7 @@ export const ReviewAndSave: React.FC<ReviewAndSaveProps> = ({
       return await finishOnboarding({ token });
     },
     onSuccess: async (response) => {
+      refetchUserData();
       const host = window.location.protocol + "//" + window.location.host;
       window.location.href = `${host}/home`;
     },
@@ -116,7 +118,7 @@ export const ReviewAndSave: React.FC<ReviewAndSaveProps> = ({
 
           <Divider className="my-4" />
 
-          {isLoading ? (
+          {isLoading || isLoadingUserData ? (
             <div className="flex justify-center items-center py-8">
               <Spinner size="md" />
               <span className="ml-2 text-default-500">

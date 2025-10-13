@@ -1,1 +1,0 @@
-ALTER TABLE "contract_details" ADD CONSTRAINT "contract_details_contract_id_unique" UNIQUE("contract_id");

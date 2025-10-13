@@ -1,1 +1,0 @@
-ALTER TABLE "contract_breakdown" ADD COLUMN "display_name" text DEFAULT 'Breakdown';

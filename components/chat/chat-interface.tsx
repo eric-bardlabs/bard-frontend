@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react";
 import { ChatMessage } from "./chat-message";
 import { debounce } from "lodash";
 import { StopCircleIcon } from "lucide-react";
+import { UserResponse } from "@/lib/api/user";
 
 type Message = {
   id?: string;
@@ -20,7 +21,7 @@ export const ChatInterface = (props: {
   messages: Message[];
   sendMessage: (message: Message) => Promise<void>;
   getMessages: (messageId?: string) => Promise<void>;
-  user: any;
+  user: UserResponse | null;
 }) => {
   const [inputValue, setInputValue] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -102,7 +103,7 @@ export const ChatInterface = (props: {
                 </span>
               </div>
               <p className="text-sm text-default-600 mt-1">
-                Hi {props.user?.firstName || 'there'}! 👋 I'm Melody, your AI music assistant. I can help you manage your songs, collaborations, and answer any questions about your music business.
+                Hi {props.user?.first_name || 'there'}! 👋 I'm Melody, your AI music assistant. I can help you manage your songs, collaborations, and answer any questions about your music business.
               </p>
             </div>
           </div>

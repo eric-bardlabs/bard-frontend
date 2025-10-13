@@ -3,10 +3,9 @@ import { Layout } from "@/components/Layout";
 import "@/styles/globals.css";
 import { SignIn, SignedIn, SignedOut } from "@clerk/nextjs";
 import { Spinner } from "@heroui/react";
-import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import { useRouter } from "next/navigation";
 import React, { Suspense } from "react";
+import { useUserContext } from "@/components/UserContext";
 
 export default function RootLayout({
   children,
@@ -14,19 +13,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { data: user, isLoading } = useQuery({
-    queryFn: () => axios.get("/api/user").then((result) => result.data),
-    queryKey: ["user"],
-  });
+  const { user, isLoading } = useUserContext();
 
   React.useEffect(() => {
     if (user) {
-      if (user.initialStep === 1 || user.initialStep === 2) {
+      if (user.initial_step === 1 || user.initial_step === 2) {
         router.push("/onboarding_v3");
       }
-      // else if (user.initialStep === 2) {
-      //   router.push("/organizations/create");
-      // }
     }
   }, [user, router]);
 

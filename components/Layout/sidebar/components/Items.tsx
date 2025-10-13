@@ -1,5 +1,4 @@
 "use client";
-import { useUserContext } from "@/components/UserContext";
 import { useClerk } from "@clerk/nextjs";
 
 import {
@@ -39,15 +38,6 @@ export enum Pages {
   chat = "Melody",
 }
 
-const iconColours = {
-  first: "#D7DFE4", // lighter
-  second: "#9BA4AE",
-  firstActive: "#FFFFFF", // lighter
-  secondActive: "#D7DFE4",
-};
-
-const { first, second, firstActive, secondActive } = iconColours;
-
 const SidebarLinkItem = ({
   path,
   label,
@@ -80,7 +70,6 @@ const SidebarLinkItem = ({
 
 export const Items = ({ isOpen, toggleSidebar }: Props) => {
   const pathname = usePathname();
-  const { user } = useUserContext();
 
   const router = useRouter();
   const { signOut } = useClerk();

@@ -1,1 +1,0 @@
-ALTER TABLE "contract" ADD COLUMN "internal_notes" text;

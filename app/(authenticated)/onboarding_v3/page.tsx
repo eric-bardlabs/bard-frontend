@@ -20,6 +20,7 @@ import { CalendarConnectStep } from "@/components/onboarding_v3/calendar-connect
 import { FileUploadStep } from "@/components/onboarding_v3/file-upload-step";
 import { useClerk } from "@clerk/nextjs";
 import { saveInitialData } from "@/lib/api/onboarding";
+import { useUserContext } from "@/components/UserContext";
 
 export default function OnboardingV3() {
   const [currentStep, setCurrentStep] = React.useState(0);
@@ -27,6 +28,7 @@ export default function OnboardingV3() {
 
   const { signOut } = useClerk();
   const { getToken } = useAuth();
+  const { user: userData, isLoading: isLoadingUserData, refetch: refetchUserData } = useUserContext();
 
   const [formData, updateFormData] = useImmer<OnboardingFormData>({
     googleSessionId: null,
@@ -36,6 +38,17 @@ export default function OnboardingV3() {
     catalogModalCompleted: false,
     reviewAndSaveModalCompleted: false,
   });
+
+    // Use userData from context instead of separate query
+    const onboardingData = userData ? {
+      userData: userData,
+      initialData: userData.initial_data || null,
+    } : null;
+    const isLoadingOnboardingData = isLoadingUserData;
+    const refetchOnboardingData = () => {
+      // Refetch user data from UserContext which includes initial_data
+      refetchUserData();
+    };
 
   // Shared navigation methods
   const handleNext = React.useCallback(
@@ -122,9 +135,9 @@ export default function OnboardingV3() {
       });
     },
     onSuccess: (data, variables) => {
-      // Only invalidate if the mutation was successful
-      refetchOnboardingData();
+      // UserContext will automatically update when user data changes
       // Call the custom onSuccess if provided
+      refetchOnboardingData();
       if (variables.onSuccess) {
         variables.onSuccess();
       }
@@ -156,27 +169,6 @@ export default function OnboardingV3() {
       },
     });
   };
-
-  const { data: onboardingData, isLoading: isLoadingOnboardingData, refetch: refetchOnboardingData } = useQuery({
-    queryKey: ["onboardingData"],
-    queryFn: async () => {
-      try {
-        const res = await axios.get("/api/user");
-
-        // Don't update state here - return the data instead
-        return {
-          userData: res.data,
-          initialData: res.data?.initialData || null,
-        };
-      } catch (error) {
-        console.error("Failed to fetch onboarding data:", error);
-        throw error;
-      }
-    },
-    refetchOnWindowFocus: false,
-    retry: 2, // Limit retries
-    retryDelay: 1000, // Wait 1 second between retries
-  });
 
   // Use useEffect to handle state updates when query data changes
   React.useEffect(() => {

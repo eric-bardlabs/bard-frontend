@@ -1,1 +1,0 @@
-ALTER TABLE "contract" RENAME COLUMN "display_name" TO "raw_name";

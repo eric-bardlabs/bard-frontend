@@ -33,10 +33,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/deploym
 
 ## Data base updates
 
-Update db/schema.ts and run:
-```angular2html
-drizzle-kit push:pg
-```
-
-See details:
-https://orm.drizzle.team/learn/tutorials/drizzle-with-vercel-edge-functions
+Manage via backend.

@@ -1,6 +1,7 @@
 "use client";
 
 import { ChatInterface } from "@/components/chat/chat-interface";
+import { useUserContext } from "@/components/UserContext";
 import { useAuth, useOrganization, useUser } from "@clerk/nextjs";
 import { Spinner } from "@heroui/react";
 import { useQuery } from "@tanstack/react-query";
@@ -21,8 +22,9 @@ export default function Chat() {
   >(undefined);
   const { organization } = useOrganization();
   const { getToken } = useAuth();
-  const {user} = useUser();
-  
+  const { user } = useUser();
+  const { user: userData, isLoading: isLoadingUserData, refetch: refetchUserData } = useUserContext();
+
   const aiHost =
     process.env.NEXT_PUBLIC_BARD_BACKEND_API_BASE_URL ||
     "http://localhost:8000";
@@ -54,11 +56,6 @@ export default function Chat() {
 
     return newSocket;
   }, [socketHost, organization?.id, user?.id]);
-
-  const { data: userInfo, isLoading } = useQuery({
-    queryFn: () => axios.get("/api/user").then((result) => result.data),
-    queryKey: ["user"],
-  });
 
   const [messages, setMessages] = useState<any[]>([]);
   const [initialized, setInitialized] = useState(false);
@@ -239,7 +236,7 @@ export default function Chat() {
         messages={messages}
         sendMessage={sendMessageHandler}
         getMessages={getMessagesHandler}
-        user={userInfo}
+        user={userData || null}
       />
     </div>
   );
