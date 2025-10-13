@@ -34,7 +34,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, user }) => {
       ) : (
         <Avatar
           src={user?.profile_picture}
-          name={user?.last_name || user?.first_name || "User"}
+          name={user?.first_name || user?.last_name || "User"}
           size="sm"
         />
       )}
