@@ -33,6 +33,7 @@ import {
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { CollaboratorModal } from "@/components/collaborator/CollaboratorModal";
+import { MergeCollaboratorsModal } from "@/components/collaborator/MergeCollaboratorsModal";
 import { useOrganization } from "@clerk/nextjs";
 import { ProfileCard } from "@/components/collaborator/profile-card";
 import clsx from "clsx";
@@ -67,6 +68,9 @@ const Collaborators = () => {
     undefined
   );
   const [viewingIndex, setViewingIndex] = useState<number | undefined>(
+    undefined
+  );
+  const [mergingIndex, setMergingIndex] = useState<number | undefined>(
     undefined
   );
 
@@ -145,6 +149,13 @@ const Collaborators = () => {
     onOpen: onViewModalOpen,
     onClose: onViewModalClose,
     onOpenChange: onViewModalOpenChange,
+  } = useDisclosure();
+  
+  const {
+    isOpen: isMergeModalOpen,
+    onOpen: onMergeModalOpen,
+    onClose: onMergeModalClose,
+    onOpenChange: onMergeModalOpenChange,
   } = useDisclosure();
 
   const pages = Math.ceil(totalCollaborators / 10);
@@ -235,6 +246,20 @@ const Collaborators = () => {
                     }}
                   >
                     Edit
+                  </DropdownItem>
+                  <DropdownItem
+                    key="merge"
+                    className={clsx(
+                      isOrganizationAdmin
+                        ? "block"
+                        : "hidden"
+                    )}
+                    onPress={() => {
+                      setMergingIndex(index);
+                      onMergeModalOpen();
+                    }}
+                  >
+                    Merge
                   </DropdownItem>
                   <DropdownItem
                     key="delete"
@@ -419,6 +444,18 @@ const Collaborators = () => {
             />
           </ModalContent>
         </Modal>
+        {mergingIndex !== undefined && items[mergingIndex] && (
+          <MergeCollaboratorsModal
+            isOpen={isMergeModalOpen || mergingIndex !== undefined}
+            onClose={() => {
+              onMergeModalClose();
+              setMergingIndex(undefined);
+              refetch();
+            }}
+            targetCollaborator={items[mergingIndex]}
+            availableCollaborators={allFetchedCollaborators}
+          />
+        )}
       </div>
     </div>
   );

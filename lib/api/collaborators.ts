@@ -460,3 +460,76 @@ export const fetchMyCollaboratorProfile = async ({
     throw error;
   }
 };
+
+// Merge collaborators functionality
+
+export interface ConflictValue {
+  source_id: string;
+  source_name: string;
+  value?: string;
+}
+
+export interface ConflictField {
+  field_name: string;
+  values: ConflictValue[];
+}
+
+export interface MergeCollaboratorsRequest {
+  target_collaborator_id: string;
+  source_collaborator_ids: string[];
+  resolved_conflicts?: Record<string, string>;
+}
+
+export interface MergeCollaboratorsResponse {
+  success: boolean;
+  message: string;
+  conflicts?: ConflictField[];
+  merged_collaborator_id?: string;
+  affected_songs?: number;
+  affected_sessions?: number;
+}
+
+interface MergeCollaboratorsParams {
+  token: string;
+  targetCollaboratorId: string;
+  sourceCollaboratorIds: string[];
+  resolvedConflicts?: Record<string, string>;
+  onSuccess?: (data: MergeCollaboratorsResponse) => void;
+  onError?: (error: any) => void;
+}
+
+export const mergeCollaborators = async ({
+  token,
+  targetCollaboratorId,
+  sourceCollaboratorIds,
+  resolvedConflicts,
+  onSuccess,
+  onError,
+}: MergeCollaboratorsParams): Promise<MergeCollaboratorsResponse> => {
+  try {
+    const response = await axios.post<MergeCollaboratorsResponse>(
+      `${API_BASE_URL}/collaborators/merge`,
+      {
+        target_collaborator_id: targetCollaboratorId,
+        source_collaborator_ids: sourceCollaboratorIds,
+        resolved_conflicts: resolvedConflicts,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    
+    if (onSuccess) {
+      onSuccess(response.data);
+    }
+    
+    return response.data;
+  } catch (error) {
+    if (onError) {
+      onError(error);
+    }
+    throw error;
+  }
+};
