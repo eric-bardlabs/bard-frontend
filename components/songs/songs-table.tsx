@@ -163,22 +163,18 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
       if (!token) throw new Error("No auth token");
 
       // Call delete API
-      await deleteTrack({
+      const response = await deleteTrack({
         token,
         trackId: songId,
-        onSuccess: (response) => {
-          toast.success(
-            `"${songName}" deleted successfully. ${response.collaborators_removed} collaborators removed, ${response.external_links_removed} external links removed, ${response.sessions_affected} sessions affected.`
-          );
-          onDeleteSong?.(songId);
-          setDeleteModalOpen(false);
-          setTrackToDelete(null);
-        },
-        onError: (error) => {
-          console.error(`Failed to delete track ${songId}:`, error);
-          toast.error(`Failed to delete "${songName}"`);
-        },
       });
+
+      // Handle successful deletion
+      toast.success(
+        `"${songName}" deleted successfully. ${response.collaborators_removed} collaborators removed, ${response.external_links_removed} external links removed, ${response.sessions_affected} sessions affected.`
+      );
+      onDeleteSong?.(songId);
+      setDeleteModalOpen(false);
+      setTrackToDelete(null);
     } catch (error) {
       console.error(`Failed to delete track ${songId}:`, error);
       toast.error(`Failed to delete "${songName}"`);
