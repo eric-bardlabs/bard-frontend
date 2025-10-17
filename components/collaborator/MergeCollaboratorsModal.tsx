@@ -46,26 +46,14 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
   const getDisplayName = (collaborator?: Collaborator) => {
     return collaborator?.artist_name || collaborator?.legal_name || "Unknown";
   };
-  // Convert target collaborator to selection format
-  const targetCollaboratorSelection: CollaboratorSelection = {
-    id: targetCollaborator.id,
-    label: getDisplayName(targetCollaborator),
-    subtitle: targetCollaborator.email,
-  };
 
   // State
   const [selectedCollaborators, setSelectedCollaborators] = useState<CollaboratorSelection[]>([]);
   const [previewFields, setPreviewFields] = useState<PreviewField[]>([]);
   const [previewCollaborator, setPreviewCollaborator] = useState<Collaborator | null>(null);
-  const [resolvedConflicts, setResolvedConflicts] = useState<Record<string, string>>({});
-  const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-
-  // Filter out target collaborator from available list
-  const selectableCollaborators = availableCollaborators.filter(
-    (collab) => collab.id !== targetCollaborator.id
-  );
 
   const previewMutation = useMutation({
     mutationFn: async () => {
@@ -86,16 +74,16 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
         setPreviewCollaborator(data.preview_collaborator);
         
         // Pre-select target collaborator's values for conflicting fields
-        const preSelectedResolutions: Record<string, string> = {};
+        const preSelectedValues: Record<string, string> = {};
         data.preview_fields.forEach(field => {
           if (field.has_conflict) {
             const targetValue = field.values.find(v => v.source_id === targetCollaborator.id);
             if (targetValue) {
-              preSelectedResolutions[field.field_name] = targetValue.value || "";
+              preSelectedValues[field.field_name] = targetValue.value || "";
             }
           }
         });
-        setResolvedConflicts(preSelectedResolutions);
+        setFieldValues(preSelectedValues);
         setShowPreview(true);
         setIsGeneratingPreview(false);
       }
@@ -112,14 +100,11 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
       if (!token) throw new Error("No auth token");
       if (!targetCollaborator) throw new Error("No target collaborator");
 
-      // Combine resolved conflicts with custom values for non-conflicting fields
-      const allFieldValues = { ...resolvedConflicts, ...customFieldValues };
-
       return mergeCollaborators({
         token,
         targetCollaboratorId: targetCollaborator.id,
         sourceCollaboratorIds: selectedCollaborators.filter(c => c.id !== targetCollaborator.id).map(c => c.id),
-        resolvedConflicts: allFieldValues,
+        resolvedConflicts: fieldValues,
         previewOnly: false,
       });
     },
@@ -143,8 +128,7 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
     setSelectedCollaborators([]);
     setPreviewFields([]);
     setPreviewCollaborator(null);
-    setResolvedConflicts({});
-    setCustomFieldValues({});
+    setFieldValues({});
     setShowPreview(false);
     setIsGeneratingPreview(false);
   };
@@ -170,7 +154,7 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
     // Validate all conflicts are resolved
     const conflictingFields = previewFields.filter(field => field.has_conflict);
     const unresolvedConflicts = conflictingFields.filter(
-      (field) => !resolvedConflicts[field.field_name]
+      (field) => !fieldValues[field.field_name]
     );
 
     if (unresolvedConflicts.length > 0) {
@@ -181,15 +165,8 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
     finalMergeMutation.mutate();
   };
 
-  const handleConflictResolution = (fieldName: string, value: string) => {
-    setResolvedConflicts((prev) => ({
-      ...prev,
-      [fieldName]: value,
-    }));
-  };
-
   const handleFieldChange = (fieldName: string, value: string) => {
-    setCustomFieldValues((prev) => ({
+    setFieldValues((prev) => ({
       ...prev,
       [fieldName]: value,
     }));
@@ -238,8 +215,8 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
             <MergePreviewStep
               previewFields={previewFields}
               previewCollaborator={previewCollaborator}
-              resolvedConflicts={resolvedConflicts}
-              onConflictResolution={handleConflictResolution}
+              resolvedConflicts={fieldValues}
+              onConflictResolution={handleFieldChange}
               onFieldChange={handleFieldChange}
             />
           )}
@@ -272,7 +249,7 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
                 onPress={handleConfirmMerge}
                 isLoading={finalMergeMutation.isPending}
                 isDisabled={
-                  previewFields.filter(field => field.has_conflict).some((field) => !resolvedConflicts[field.field_name])
+                  previewFields.filter(field => field.has_conflict).some((field) => !fieldValues[field.field_name])
                 }
               >
                 {finalMergeMutation.isPending ? "Merging..." : "Confirm Merge"}
