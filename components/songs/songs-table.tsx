@@ -22,6 +22,7 @@ import { Track, TrackCollaborator } from "@/lib/api/tracks";
 import { updateTrack, deleteTrack } from "@/lib/api/tracks";
 import { useAuth } from "@clerk/nextjs";
 import { AlbumSingleSelect } from "@/components/album/AlbumSingleSelect";
+import { DeleteTrackModal } from "./DeleteTrackModal";
 import { toast } from "sonner";
 import dayjs from "dayjs";
 
@@ -51,6 +52,11 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
   const [deletingTracks, setDeletingTracks] = React.useState<
     Record<string, boolean>
   >({});
+  const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
+  const [trackToDelete, setTrackToDelete] = React.useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   // Helper function to get album name from track object
   const getAlbumName = React.useCallback((track: Track) => {
@@ -134,8 +140,18 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
     }
   }, [getToken, onUpdateSong]);
 
-  // Handle track deletion
-  const handleDeleteTrack = React.useCallback(async (songId: string, songName: string) => {
+  // Handle opening delete modal
+  const handleOpenDeleteModal = React.useCallback((songId: string, songName: string) => {
+    setTrackToDelete({ id: songId, name: songName });
+    setDeleteModalOpen(true);
+  }, []);
+
+  // Handle confirming deletion
+  const handleConfirmDelete = React.useCallback(async () => {
+    if (!trackToDelete) return;
+
+    const { id: songId, name: songName } = trackToDelete;
+
     try {
       setDeletingTracks((prev) => ({
         ...prev,
@@ -155,6 +171,8 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
             `"${songName}" deleted successfully. ${response.collaborators_removed} collaborators removed, ${response.external_links_removed} external links removed, ${response.sessions_affected} sessions affected.`
           );
           onDeleteSong?.(songId);
+          setDeleteModalOpen(false);
+          setTrackToDelete(null);
         },
         onError: (error) => {
           console.error(`Failed to delete track ${songId}:`, error);
@@ -170,7 +188,15 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
         [songId]: false,
       }));
     }
-  }, [getToken, onDeleteSong]);
+  }, [getToken, onDeleteSong, trackToDelete]);
+
+  // Handle closing modal
+  const handleCloseDeleteModal = React.useCallback(() => {
+    if (trackToDelete && !deletingTracks[trackToDelete.id]) {
+      setDeleteModalOpen(false);
+      setTrackToDelete(null);
+    }
+  }, [trackToDelete, deletingTracks]);
 
   // Render editable cell for album and status
   const renderEditableCell = React.useCallback((
@@ -339,9 +365,7 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
             color="danger"
             startContent={<Icon icon="lucide:trash" className="text-lg" />}
             onPress={() => {
-              if (confirm(`Are you sure you want to delete "${song.display_name}"? This action cannot be undone.`)) {
-                handleDeleteTrack(song.id, song.display_name || "Untitled");
-              }
+              handleOpenDeleteModal(song.id, song.display_name || "Untitled");
             }}
           >
             Delete Track
@@ -349,9 +373,10 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
         </DropdownMenu>
       </Dropdown>
     );
-  }, [deletingTracks, handleDeleteTrack]);
+  }, [deletingTracks, handleOpenDeleteModal]);
 
   return (
+    <>
     <Table
       aria-label="Songs table"
       removeWrapper
@@ -392,5 +417,15 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
         ))}
       </TableBody>
     </Table>
+
+    {/* Delete confirmation modal */}
+    <DeleteTrackModal
+      isOpen={deleteModalOpen}
+      onClose={handleCloseDeleteModal}
+      onConfirm={handleConfirmDelete}
+      trackName={trackToDelete?.name || ""}
+      isDeleting={trackToDelete ? deletingTracks[trackToDelete.id] : false}
+    />
+  </>
   );
 });
