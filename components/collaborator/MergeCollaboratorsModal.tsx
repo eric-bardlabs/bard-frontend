@@ -17,6 +17,7 @@ import { useAuth } from "@clerk/nextjs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Collaborator,
+  CollaboratorRelationships,
   PreviewField,
   mergeCollaborators,
   MergeCollaboratorsResponse,
@@ -43,14 +44,10 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
     return null;
   }
 
-  const getDisplayName = (collaborator?: Collaborator) => {
-    return collaborator?.artist_name || collaborator?.legal_name || "Unknown";
-  };
-
   // State
   const [selectedCollaborators, setSelectedCollaborators] = useState<CollaboratorSelection[]>([]);
   const [previewFields, setPreviewFields] = useState<PreviewField[]>([]);
-  const [previewCollaborator, setPreviewCollaborator] = useState<Collaborator | null>(null);
+  const [previewRelationships, setPreviewRelationships] = useState<CollaboratorRelationships | null>(null);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -69,9 +66,9 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
       });
     },
     onSuccess: (data: MergeCollaboratorsResponse) => {
-      if (data.success && data.preview_fields && data.preview_collaborator) {
+      if (data.success && data.preview_fields && data.preview_relationships) {
         setPreviewFields(data.preview_fields);
-        setPreviewCollaborator(data.preview_collaborator);
+        setPreviewRelationships(data.preview_relationships);
         
         // Pre-select target collaborator's values for conflicting fields
         const preSelectedValues: Record<string, string> = {};
@@ -127,7 +124,7 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
   const resetState = () => {
     setSelectedCollaborators([]);
     setPreviewFields([]);
-    setPreviewCollaborator(null);
+    setPreviewRelationships(null);
     setFieldValues({});
     setShowPreview(false);
     setIsGeneratingPreview(false);
@@ -191,7 +188,7 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
             <div className="space-y-4">
               <div className="mb-4">
                 <p className="text-medium">
-                  Select collaborators to merge with <span className="font-semibold text-primary">{getDisplayName(targetCollaborator)}</span>
+                  Select collaborators to merge with <span className="font-semibold text-primary">{targetCollaborator.artist_name || targetCollaborator.legal_name || "Unknown"}</span>
                 </p>
               </div>
 
@@ -214,7 +211,7 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
             // Step 2: Preview merged collaborator
             <MergePreviewStep
               previewFields={previewFields}
-              previewCollaborator={previewCollaborator}
+              previewRelationships={previewRelationships}
               resolvedConflicts={fieldValues}
               onConflictResolution={handleFieldChange}
               onFieldChange={handleFieldChange}

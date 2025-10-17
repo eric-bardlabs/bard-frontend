@@ -7,13 +7,13 @@ import {
   SelectItem,
 } from "@heroui/react";
 import {
-  Collaborator,
+  CollaboratorRelationships,
   PreviewField,
 } from "@/lib/api/collaborators";
 
 interface MergePreviewStepProps {
   previewFields: PreviewField[];
-  previewCollaborator: Collaborator | null;
+  previewRelationships: CollaboratorRelationships | null;
   resolvedConflicts: Record<string, string>;
   onConflictResolution: (fieldName: string, value: string) => void;
   onFieldChange: (fieldName: string, value: string) => void;
@@ -21,7 +21,7 @@ interface MergePreviewStepProps {
 
 export const MergePreviewStep: React.FC<MergePreviewStepProps> = ({
   previewFields,
-  previewCollaborator,
+  previewRelationships,
   resolvedConflicts,
   onConflictResolution,
   onFieldChange,
@@ -159,8 +159,8 @@ export const MergePreviewStep: React.FC<MergePreviewStepProps> = ({
                 Managers
               </label>
               <div className="w-full min-h-10 px-3 py-2 border border-default-300 bg-default-100 rounded-medium text-small text-default-700">
-                {previewCollaborator?.relationships?.managers?.length ? 
-                  previewCollaborator.relationships.managers.map(m => m.artist_name || m.legal_name).join(", ") :
+                {previewRelationships?.managers?.length ? 
+                  previewRelationships.managers.map(m => m.artist_name || m.legal_name).join(", ") :
                   "(none)"
                 }
               </div>
@@ -171,8 +171,8 @@ export const MergePreviewStep: React.FC<MergePreviewStepProps> = ({
                 Members
               </label>
               <div className="w-full min-h-10 px-3 py-2 border border-default-300 bg-default-100 rounded-medium text-small text-default-700">
-                {previewCollaborator?.relationships?.members?.length ? 
-                  previewCollaborator.relationships.members.map(m => m.artist_name || m.legal_name).join(", ") :
+                {previewRelationships?.members?.length ? 
+                  previewRelationships.members.map(m => m.artist_name || m.legal_name).join(", ") :
                   "(none)"
                 }
               </div>
@@ -183,8 +183,8 @@ export const MergePreviewStep: React.FC<MergePreviewStepProps> = ({
                 Publishing Entities
               </label>
               <div className="w-full min-h-10 px-3 py-2 border border-default-300 bg-default-100 rounded-medium text-small text-default-700">
-                {previewCollaborator?.relationships?.publishing_entities?.length ? 
-                  previewCollaborator.relationships.publishing_entities.map(e => e.artist_name || e.legal_name).join(", ") :
+                {previewRelationships?.publishing_entities?.length ? 
+                  previewRelationships.publishing_entities.map(e => e.artist_name || e.legal_name).join(", ") :
                   "(none)"
                 }
               </div>

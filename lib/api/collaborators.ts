@@ -489,8 +489,8 @@ export interface PreviewField {
 export interface MergeCollaboratorsResponse {
   success: boolean;
   message: string;
-  preview_collaborator?: Collaborator;
   preview_fields?: PreviewField[];
+  preview_relationships?: CollaboratorRelationships;
   merged_collaborator_id?: string;
   affected_songs?: number;
   affected_sessions?: number;
