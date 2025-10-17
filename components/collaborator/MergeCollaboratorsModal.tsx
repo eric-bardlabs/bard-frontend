@@ -14,6 +14,7 @@ import {
   User,
   Select,
   SelectItem,
+  Input,
 } from "@heroui/react";
 import { CollaboratorMultiSelect } from "./collaboratorMultiSelect";
 import { CollaboratorSelection } from "./types";
@@ -63,6 +64,8 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
   const [previewFields, setPreviewFields] = useState<PreviewField[]>([]);
   const [previewCollaborator, setPreviewCollaborator] = useState<Collaborator | null>(null);
   const [resolvedConflicts, setResolvedConflicts] = useState<Record<string, string>>({});
+  const [customValues, setCustomValues] = useState<Record<string, string>>({});
+  const [showCustomInput, setShowCustomInput] = useState<Record<string, boolean>>({});
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -116,11 +119,14 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
       if (!token) throw new Error("No auth token");
       if (!targetCollaborator) throw new Error("No target collaborator");
 
+      // Combine resolved conflicts with custom values for non-conflicting fields
+      const allFieldValues = { ...resolvedConflicts, ...customValues };
+
       return mergeCollaborators({
         token,
         targetCollaboratorId: targetCollaborator.id,
         sourceCollaboratorIds: selectedCollaborators.filter(c => c.id !== targetCollaborator.id).map(c => c.id),
-        resolvedConflicts,
+        resolvedConflicts: allFieldValues,
         previewOnly: false,
       });
     },
@@ -145,6 +151,8 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
     setPreviewFields([]);
     setPreviewCollaborator(null);
     setResolvedConflicts({});
+    setCustomValues({});
+    setShowCustomInput({});
     setShowPreview(false);
     setIsGeneratingPreview(false);
   };
@@ -183,6 +191,39 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
 
   const handleConflictResolution = (fieldName: string, value: string) => {
     setResolvedConflicts((prev) => ({
+      ...prev,
+      [fieldName]: value,
+    }));
+    
+    // If selecting "custom", show custom input
+    if (value === "CUSTOM") {
+      setShowCustomInput((prev) => ({
+        ...prev,
+        [fieldName]: true,
+      }));
+    } else {
+      setShowCustomInput((prev) => ({
+        ...prev,
+        [fieldName]: false,
+      }));
+    }
+  };
+
+  const handleCustomValueChange = (fieldName: string, value: string) => {
+    setCustomValues((prev) => ({
+      ...prev,
+      [fieldName]: value,
+    }));
+    
+    // Update resolved conflicts to use custom value
+    setResolvedConflicts((prev) => ({
+      ...prev,
+      [fieldName]: value,
+    }));
+  };
+
+  const handleNonConflictingFieldChange = (fieldName: string, value: string) => {
+    setCustomValues((prev) => ({
       ...prev,
       [fieldName]: value,
     }));
@@ -242,12 +283,12 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
                   {previewFields.map((field) => (
                     <div key={field.field_name}>
                       {field.has_conflict ? (
-                        // Conflicting field - show selector
-                        <div>
+                        // Conflicting field - show selector with custom option
+                        <div className="space-y-2">
                           <Select
                             size="sm"
                             label={field.field_name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
-                            selectedKeys={[resolvedConflicts[field.field_name] || ""]}
+                            selectedKeys={[showCustomInput[field.field_name] ? "CUSTOM" : (resolvedConflicts[field.field_name] || "")]}
                             onSelectionChange={(keys) => {
                               const selectedValue = Array.from(keys)[0] as string;
                               handleConflictResolution(field.field_name, selectedValue);
@@ -255,32 +296,51 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
                             variant="bordered"
                             labelPlacement="outside"
                           >
-                            {field.values.map((value) => (
-                              <SelectItem 
-                                key={value.value || ""} 
-                                textValue={`${value.source_name}: ${value.value || "(empty)"}`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-small">{value.source_name}:</span>
-                                  <span className="text-default-600 text-small">
-                                    {value.value || "(empty)"}
-                                  </span>
-                                </div>
+                            <>
+                              {field.values.map((value) => (
+                                <SelectItem 
+                                  key={value.value || ""} 
+                                  textValue={`${value.source_name}: ${value.value || "(empty)"}`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium text-small">{value.source_name}:</span>
+                                    <span className="text-default-600 text-small">
+                                      {value.value || "(empty)"}
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                              <SelectItem key="CUSTOM" textValue="Enter other value">
+                                <span className="text-primary font-medium text-small">Enter other value</span>
                               </SelectItem>
-                            ))}
+                            </>
                           </Select>
-                          <p className="text-xs text-warning mt-1">⚠️ Conflict detected</p>
+                          
+                          {showCustomInput[field.field_name] && (
+                            <Input
+                              size="sm"
+                              placeholder="Enter custom value"
+                              value={customValues[field.field_name] || ""}
+                              onChange={(e) => handleCustomValueChange(field.field_name, e.target.value)}
+                              variant="bordered"
+                            />
+                          )}
+                          
+                          <p className="text-xs text-warning">⚠️ Conflict detected</p>
                         </div>
                       ) : (
-                        // Non-conflicting field - show as display value
-                        <div>
-                          <label className="block text-sm font-medium text-foreground pb-1.5">
-                            {field.field_name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
-                          </label>
-                          <div className="w-full min-h-10 px-3 py-2 border border-default-300 bg-default-100 rounded-medium text-small text-default-700">
-                            {field.values.find(v => v.value)?.value || "(empty)"}
-                          </div>
-                        </div>
+                        // Non-conflicting field - show as editable input
+                        <Input
+                          size="sm"
+                          label={field.field_name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                          value={customValues[field.field_name] !== undefined ? 
+                            customValues[field.field_name] : 
+                            (field.values.find(v => v.value)?.value || "")
+                          }
+                          onChange={(e) => handleNonConflictingFieldChange(field.field_name, e.target.value)}
+                          variant="bordered"
+                          labelPlacement="outside"
+                        />
                       )}
                     </div>
                   ))}
