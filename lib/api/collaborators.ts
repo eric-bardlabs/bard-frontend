@@ -461,29 +461,36 @@ export const fetchMyCollaboratorProfile = async ({
   }
 };
 
-// Merge collaborators functionality
-
-export interface ConflictValue {
-  source_id: string;
-  source_name: string;
-  value?: string;
+export interface UpdateCollaboratorRequest {
+  legal_name?: string;
+  artist_name?: string;
+  email?: string;
+  pro?: string;
+  pro_id?: string;
+  phone_number?: string;
+  region?: string;
+  profile_link?: string;
+  bio?: string;
 }
 
-export interface ConflictField {
-  field_name: string;
-  values: ConflictValue[];
+export interface UpdateCollaboratorRelationshipsRequest {
+  managers: string[];
+  members: string[];
+  publishing_entities: string[];
 }
 
 export interface MergeCollaboratorsRequest {
   target_collaborator_id: string;
   source_collaborator_ids: string[];
-  resolved_conflicts?: Record<string, string>;
+  preview_only?: boolean;
+  final_collaborator_data?: UpdateCollaboratorRequest;
+  final_relationships?: UpdateCollaboratorRelationshipsRequest;
 }
 
 export interface PreviewField {
   field_name: string;
   has_conflict: boolean;
-  values: ConflictValue[];
+  values: string[];
 }
 
 export interface MergeCollaboratorsResponse {
@@ -500,8 +507,9 @@ interface MergeCollaboratorsParams {
   token: string;
   targetCollaboratorId: string;
   sourceCollaboratorIds: string[];
-  resolvedConflicts?: Record<string, string>;
   previewOnly?: boolean;
+  finalCollaboratorData?: UpdateCollaboratorRequest;
+  finalRelationships?: UpdateCollaboratorRelationshipsRequest;
   onSuccess?: (data: MergeCollaboratorsResponse) => void;
   onError?: (error: any) => void;
 }
@@ -510,8 +518,9 @@ export const mergeCollaborators = async ({
   token,
   targetCollaboratorId,
   sourceCollaboratorIds,
-  resolvedConflicts,
   previewOnly = true,
+  finalCollaboratorData,
+  finalRelationships,
   onSuccess,
   onError,
 }: MergeCollaboratorsParams): Promise<MergeCollaboratorsResponse> => {
@@ -521,8 +530,9 @@ export const mergeCollaborators = async ({
       {
         target_collaborator_id: targetCollaboratorId,
         source_collaborator_ids: sourceCollaboratorIds,
-        resolved_conflicts: resolvedConflicts,
         preview_only: previewOnly,
+        final_collaborator_data: finalCollaboratorData,
+        final_relationships: finalRelationships,
       },
       {
         headers: {

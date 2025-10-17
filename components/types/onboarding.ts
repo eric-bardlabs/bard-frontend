@@ -18,8 +18,8 @@ export interface BasicInformationData {
   };
   organization_members?: {
     id?: string;
-    legal_name: string;
-    artist_name: string;
+    legal_name?: string;
+    artist_name?: string;
     email?: string;
     pro?: string;
     pro_id?: string;

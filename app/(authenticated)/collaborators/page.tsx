@@ -453,7 +453,6 @@ const Collaborators = () => {
               refetch();
             }}
             targetCollaborator={items[mergingIndex]}
-            availableCollaborators={allFetchedCollaborators}
           />
         )}
       </div>

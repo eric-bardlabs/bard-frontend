@@ -21,20 +21,21 @@ import {
   PreviewField,
   mergeCollaborators,
   MergeCollaboratorsResponse,
+  UpdateCollaboratorRequest,
+  UpdateCollaboratorRelationshipsRequest,
 } from "@/lib/api/collaborators";
+import { CollaboratorBasicData } from "./CollaboratorBasicFields";
 
 interface MergeCollaboratorsModalProps {
   isOpen: boolean;
   onClose: () => void;
   targetCollaborator?: Collaborator;
-  availableCollaborators: Collaborator[];
 }
 
 export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = ({
   isOpen,
   onClose,
   targetCollaborator,
-  availableCollaborators,
 }) => {
   const { getToken } = useAuth();
   const queryClient = useQueryClient();
@@ -48,9 +49,35 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
   const [selectedCollaborators, setSelectedCollaborators] = useState<CollaboratorSelection[]>([]);
   const [previewFields, setPreviewFields] = useState<PreviewField[]>([]);
   const [previewRelationships, setPreviewRelationships] = useState<CollaboratorRelationships | null>(null);
-  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [previewData, setPreviewData] = useState<CollaboratorBasicData>({
+    artist_name: "",
+    legal_name: "",
+    email: "",
+    region: "",
+    pro: "",
+    pro_id: "",
+    profile_link: "",
+    bio: "",
+    phone_number: "",
+  });
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+
+  // Initialize preview data from target collaborator and preview fields
+  const initializePreviewData = (fields: PreviewField[]) => {
+    const newPreviewData: CollaboratorBasicData = targetCollaborator;
+
+    // For conflicting fields, use the pre-selected resolution
+    // For non-conflicting fields, use the merged value or target value
+    fields.forEach(field => {
+      const dataKey = field.field_name as keyof CollaboratorBasicData;
+      if (dataKey) {
+        newPreviewData[dataKey] = field.values?.[0] || "";
+      }
+    });
+
+    setPreviewData(newPreviewData);
+  };
 
   const previewMutation = useMutation({
     mutationFn: async () => {
@@ -70,17 +97,9 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
         setPreviewFields(data.preview_fields);
         setPreviewRelationships(data.preview_relationships);
         
-        // Pre-select target collaborator's values for conflicting fields
-        const preSelectedValues: Record<string, string> = {};
-        data.preview_fields.forEach(field => {
-          if (field.has_conflict) {
-            const targetValue = field.values.find(v => v.source_id === targetCollaborator.id);
-            if (targetValue) {
-              preSelectedValues[field.field_name] = targetValue.value || "";
-            }
-          }
-        });
-        setFieldValues(preSelectedValues);
+        // Initialize preview data with target collaborator defaults and merged values
+        initializePreviewData(data.preview_fields);
+        
         setShowPreview(true);
         setIsGeneratingPreview(false);
       }
@@ -97,12 +116,23 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
       if (!token) throw new Error("No auth token");
       if (!targetCollaborator) throw new Error("No target collaborator");
 
+      // Prepare final collaborator data from preview data
+      const finalCollaboratorData = previewData;
+
+      // Prepare final relationships data
+      const finalRelationships = {
+        managers: previewRelationships?.managers?.map(m => m.id) || [],
+        members: previewRelationships?.members?.map(m => m.id) || [],
+        publishing_entities: previewRelationships?.publishing_entities?.map(e => e.id) || [],
+      };
+
       return mergeCollaborators({
         token,
         targetCollaboratorId: targetCollaborator.id,
         sourceCollaboratorIds: selectedCollaborators.filter(c => c.id !== targetCollaborator.id).map(c => c.id),
-        resolvedConflicts: fieldValues,
         previewOnly: false,
+        finalCollaboratorData,
+        finalRelationships,
       });
     },
     onSuccess: (data: MergeCollaboratorsResponse) => {
@@ -125,7 +155,17 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
     setSelectedCollaborators([]);
     setPreviewFields([]);
     setPreviewRelationships(null);
-    setFieldValues({});
+    setPreviewData({
+      artist_name: "",
+      legal_name: "",
+      email: "",
+      region: "",
+      pro: "",
+      pro_id: "",
+      profile_link: "",
+      bio: "",
+      phone_number: "",
+    });
     setShowPreview(false);
     setIsGeneratingPreview(false);
   };
@@ -148,11 +188,12 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
   };
 
   const handleConfirmMerge = () => {
-    // Validate all conflicts are resolved
+    // Validate all conflicts are resolved by checking if previewData has values for conflicting fields
     const conflictingFields = previewFields.filter(field => field.has_conflict);
-    const unresolvedConflicts = conflictingFields.filter(
-      (field) => !fieldValues[field.field_name]
-    );
+    const unresolvedConflicts = conflictingFields.filter((field) => {
+      const dataKey = field.field_name as keyof CollaboratorBasicData;
+      return !dataKey || !previewData[dataKey];
+    });
 
     if (unresolvedConflicts.length > 0) {
       toast.error("Please resolve all conflicts before proceeding");
@@ -162,10 +203,11 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
     finalMergeMutation.mutate();
   };
 
-  const handleFieldChange = (fieldName: string, value: string) => {
-    setFieldValues((prev) => ({
+
+  const handlePreviewDataChange = (field: keyof CollaboratorBasicData, value: string) => {
+    setPreviewData((prev) => ({
       ...prev,
-      [fieldName]: value,
+      [field]: value,
     }));
   };
 
@@ -212,9 +254,8 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
             <MergePreviewStep
               previewFields={previewFields}
               previewRelationships={previewRelationships}
-              resolvedConflicts={fieldValues}
-              onConflictResolution={handleFieldChange}
-              onFieldChange={handleFieldChange}
+              previewData={previewData}
+              onPreviewDataChange={handlePreviewDataChange}
             />
           )}
         </ModalBody>
@@ -245,9 +286,7 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
                 color="danger"
                 onPress={handleConfirmMerge}
                 isLoading={finalMergeMutation.isPending}
-                isDisabled={
-                  previewFields.filter(field => field.has_conflict).some((field) => !fieldValues[field.field_name])
-                }
+                isDisabled={false}
               >
                 {finalMergeMutation.isPending ? "Merging..." : "Confirm Merge"}
               </Button>

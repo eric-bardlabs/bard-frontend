@@ -16,18 +16,7 @@ import {
 interface OnboardingCollaboratorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (collaboratorData: {
-    legal_name: string;
-    artist_name: string;
-    email: string;
-    region: string;
-    pro: string;
-    pro_id: string;
-    profile_link: string;
-    bio: string;
-    phone_number: string;
-    initial_source?: string;
-  }) => Promise<any>;
+  onSubmit: (collaboratorData: CollaboratorBasicData) => Promise<any>;
   creationSource?: string;
 }
 
@@ -39,31 +28,29 @@ export const OnboardingCollaboratorModal: React.FC<OnboardingCollaboratorModalPr
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [collaboratorData, setCollaboratorData] = useState<CollaboratorBasicData>({
-    legalName: "",
-    artistName: "",
+    legal_name: "",
+    artist_name: "",
     email: "",
     region: "",
     pro: "",
-    proId: "",
-    profileLink: "",
+    pro_id: "",
+    profile_link: "",
     bio: "",
-    phoneNumber: "",
+    phone_number: "",
   });
-  const [phoneNumber, setPhoneNumber] = useState<string | undefined>();
 
   const resetForm = () => {
     setCollaboratorData({
-      legalName: "",
-      artistName: "",
+      legal_name: "",
+      artist_name: "",
       email: "",
       region: "",
       pro: "",
-      proId: "",
-      profileLink: "",
+      pro_id: "",
+      profile_link: "",
       bio: "",
-      phoneNumber: "",
+      phone_number: "",
     });
-    setPhoneNumber(undefined);
   };
 
   const handleCollaboratorDataChange = (
@@ -79,7 +66,7 @@ export const OnboardingCollaboratorModal: React.FC<OnboardingCollaboratorModalPr
   const handleSubmit = async () => {
     
     // Basic validation
-    if (!collaboratorData.artistName && !collaboratorData.legalName) {
+    if (!collaboratorData.artist_name && !collaboratorData.legal_name) {
       toast.error("Please provide either an artist name or legal name");
       return;
     }
@@ -88,15 +75,7 @@ export const OnboardingCollaboratorModal: React.FC<OnboardingCollaboratorModalPr
 
     try {
       await onSubmit({
-        legal_name: collaboratorData.legalName,
-        artist_name: collaboratorData.artistName,
-        email: collaboratorData.email,
-        region: collaboratorData.region,
-        pro: collaboratorData.pro,
-        pro_id: collaboratorData.proId,
-        profile_link: collaboratorData.profileLink,
-        bio: collaboratorData.bio,
-        phone_number: phoneNumber || "",
+        ...collaboratorData,
         initial_source: creationSource,
       });
 
@@ -116,7 +95,7 @@ export const OnboardingCollaboratorModal: React.FC<OnboardingCollaboratorModalPr
     onClose();
   };
 
-  const isFormValid = collaboratorData.artistName.trim() || collaboratorData.legalName.trim();
+  const isFormValid = collaboratorData.artist_name?.trim() || collaboratorData.legal_name?.trim();
 
   return (
     <Modal 
@@ -140,8 +119,6 @@ export const OnboardingCollaboratorModal: React.FC<OnboardingCollaboratorModalPr
               <CollaboratorBasicFields
                 data={collaboratorData}
                 onChange={handleCollaboratorDataChange}
-                phoneNumber={phoneNumber}
-                onPhoneChange={setPhoneNumber}
               />
             </ModalBody>
             <ModalFooter>
