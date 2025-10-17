@@ -119,10 +119,15 @@ interface DeleteTrackResponse {
   sessions_affected: number;
 }
 
+export interface PreviewFieldValue {
+  value: string;  // The actual value (ID for album/artist, raw value for others)
+  display_value: string;  // The display value (name for album/artist, same as value for others)
+}
+
 export interface PreviewTrackField {
   field_name: string;
   has_conflict: boolean;
-  values: string[];
+  values: PreviewFieldValue[];
 }
 
 export interface MergeTracksRequest {
@@ -450,5 +455,6 @@ export type {
   UpdateTrackData, 
   TrackCollaborator,
   TrackCollaboratorInput,
-  DeleteTrackResponse 
+  DeleteTrackResponse,
+  PreviewFieldValue
 };

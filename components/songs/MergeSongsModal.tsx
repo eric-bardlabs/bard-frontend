@@ -8,10 +8,12 @@ import {
   ModalBody,
   ModalFooter,
   Button,
+  Select,
+  SelectItem,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { TrackMultiSelect, TrackOption } from "./track-multi-select";
-import { Track, mergeTracks, PreviewTrackField, UpdateTrackData } from "@/lib/api/tracks";
+import { Track, mergeTracks, PreviewTrackField, PreviewFieldValue, UpdateTrackData } from "@/lib/api/tracks";
 import { toast } from "sonner";
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
@@ -51,17 +53,11 @@ export const MergeSongsModal: React.FC<MergeSongsModalProps> = ({
         album_id: targetTrack.album_id,
         status: targetTrack.status,
         isrc: targetTrack.isrc,
-        spotify_code: targetTrack.spotify_code,
-        apple_code: targetTrack.apple_code,
         sxid: targetTrack.sxid,
-        ean: targetTrack.ean,
-        upc: targetTrack.upc,
         sync: targetTrack.sync,
         pitch: targetTrack.pitch,
         project_start_date: targetTrack.project_start_date,
         release_date: targetTrack.release_date,
-        spotify_track_id: targetTrack.spotify_track_id,
-        splits_confirmation_status: targetTrack.splits_confirmation_status,
         registration_status: targetTrack.registration_status,
         master_fee_status: targetTrack.master_fee_status,
         notes: targetTrack.notes,
@@ -114,7 +110,7 @@ export const MergeSongsModal: React.FC<MergeSongsModalProps> = ({
         response.preview_fields.forEach(field => {
           if (field.has_conflict && field.values.length > 0) {
             // Pre-select the target track's value (first value should be from target)
-            updatedPreviewData[field.field_name as keyof Track] = field.values[0] as any;
+            updatedPreviewData[field.field_name as keyof Track] = field.values[0].value as any;
           }
         });
         setPreviewData(updatedPreviewData);
@@ -167,7 +163,7 @@ export const MergeSongsModal: React.FC<MergeSongsModalProps> = ({
         token,
         request: {
           target_track_id: targetTrack.id,
-          source_track_ids: selectedTracks.map(t => t.value),
+          source_track_ids: selectedTracks.filter(t => t.value !== targetTrack.id).map(t => t.value),
           preview_only: false,
           final_track_data: finalTrackData,
         },
@@ -254,73 +250,147 @@ export const MergeSongsModal: React.FC<MergeSongsModalProps> = ({
     </>
   );
 
-  const renderPreviewStep = () => (
-    <>
-      <ModalHeader>
-        <div className="flex flex-col gap-1">
-          <h2 className="text-large">Review Merge</h2>
-          <p className="text-small text-default-500">
-            Review and resolve conflicts for the merged track
-          </p>
-        </div>
-      </ModalHeader>
+  const renderPreviewStep = () => {
+    // Separate fields into conflicts and non-conflicts with values
+    const conflictFields = previewFields.filter(field => 
+      field.has_conflict && field.values.some(v => v.value && v.value.trim() !== "")
+    );
+    
+    const nonConflictFields = previewFields.filter(field => 
+      !field.has_conflict && field.values.some(v => v.value && v.value.trim() !== "")
+    );
 
-      <ModalBody>
-        <div className="space-y-4">
-          <div className="bg-content2 rounded-lg p-4">
-            <h4 className="text-medium font-semibold mb-3">Merged Track Details</h4>
-            
-            <div className="space-y-3">
-              {previewFields.map((field) => (
-                <div key={field.field_name} className="space-y-2">
-                  <label className="text-sm font-medium">
-                    {field.field_name.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                    {field.has_conflict && (
-                      <span className="text-warning ml-2">⚠️ Conflict detected</span>
-                    )}
-                  </label>
-                  
-                  {field.has_conflict ? (
-                    <select
-                      className="w-full p-2 border border-default-300 rounded-md"
-                      value={previewData[field.field_name as keyof Track] as string || ""}
-                      onChange={(e) => handlePreviewFieldChange(field.field_name, e.target.value)}
-                    >
-                      {field.values.map((value, index) => (
-                        <option key={index} value={value}>
-                          {value || "(empty)"}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      type="text"
-                      className="w-full p-2 border border-default-300 rounded-md bg-default-100"
-                      value={field.values[0] || ""}
-                      readOnly
-                    />
-                  )}
+    const formatFieldName = (fieldName: string) => {
+      // Handle special cases for better display names
+      if (fieldName === 'album_id') return 'Album';
+      if (fieldName === 'artist_id') return 'Artist';
+      
+      return fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    };
+
+    return (
+      <>
+        <ModalHeader>
+          <div className="flex flex-col gap-1">
+            <h2 className="text-large">Review Merge</h2>
+            <p className="text-small text-default-500">
+              Review and resolve conflicts for the merged track
+            </p>
+          </div>
+        </ModalHeader>
+
+        <ModalBody>
+          <div className="space-y-6">
+            {/* Conflicting Fields Section */}
+            {conflictFields.length > 0 && (
+              <div className="bg-warning-50 border border-warning-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon icon="lucide:alert-triangle" className="text-warning-600" />
+                  <h4 className="text-medium font-semibold text-warning-800">
+                    Conflicts to Resolve ({conflictFields.length})
+                  </h4>
                 </div>
-              ))}
+                
+                <div className="space-y-3">
+                  {conflictFields.map((field) => (
+                    <div key={field.field_name} className="space-y-2">
+                      <label className="text-sm font-medium text-warning-800">
+                        {formatFieldName(field.field_name)}
+                      </label>
+                      
+                      <Select
+                        selectedKeys={[previewData[field.field_name as keyof Track] as string || ""]}
+                        onSelectionChange={(keys) => {
+                          const selectedValue = Array.from(keys)[0] as string;
+                          handlePreviewFieldChange(field.field_name, selectedValue);
+                        }}
+                        classNames={{
+                          trigger: "border-warning-100 focus:border-warning-100",
+                          value: "text-warning-800",
+                        }}
+                        placeholder="Select value..."
+                        size="sm"
+                        variant="bordered"
+                        labelPlacement="outside"
+                        className="w-full"
+                      >
+                        {field.values.map((fieldValue, index) => (
+                          <SelectItem key={fieldValue.value}>
+                            {fieldValue.display_value || "(empty)"}
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Non-Conflicting Fields Section */}
+            {nonConflictFields.length > 0 && (
+              <div className="bg-content2 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Icon icon="lucide:check-circle" className="text-success-600" />
+                  <h4 className="text-medium font-semibold">
+                    Merged Fields ({nonConflictFields.length})
+                  </h4>
+                </div>
+                
+                <div className="space-y-3">
+                  {nonConflictFields.map((field) => (
+                    <div key={field.field_name} className="space-y-2">
+                      <label className="text-sm font-medium text-default-600">
+                        {formatFieldName(field.field_name)}
+                      </label>
+                      
+                      <input
+                        type="text"
+                        className="w-full p-2 border border-default-300 rounded-md bg-default-50 text-default-600"
+                        value={field.values[0]?.display_value || ""}
+                        readOnly
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Summary */}
+            <div className="bg-primary-50 border border-primary-200 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <Icon icon="lucide:info" className="text-primary-600 text-sm mt-0.5 flex-shrink-0" />
+                <div className="text-small text-primary-800">
+                  <p className="font-medium mb-1">Merge Summary:</p>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li>{conflictFields.length} conflicts to resolve</li>
+                    <li>{nonConflictFields.length} fields will be merged automatically</li>
+                    <li>All collaborators, sessions, and external links will be consolidated</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </ModalBody>
+        </ModalBody>
 
-      <ModalFooter>
-        <Button variant="light" onPress={() => setCurrentStep("selection")}>
-          Back
-        </Button>
-        <Button
-          color="danger"
-          onPress={handleConfirmMerge}
-          isLoading={isMerging}
-        >
-          {isMerging ? "Merging..." : "Confirm Merge"}
-        </Button>
-      </ModalFooter>
-    </>
-  );
+        <ModalFooter>
+          <Button variant="light" onPress={() => setCurrentStep("selection")}>
+            Back
+          </Button>
+          <Button
+            color="danger"
+            onPress={handleConfirmMerge}
+            isLoading={isMerging}
+            isDisabled={conflictFields.some(field => 
+              !previewData[field.field_name as keyof Track] || 
+              (previewData[field.field_name as keyof Track] as string) === ""
+            )}
+          >
+            {isMerging ? "Merging..." : "Confirm Merge"}
+          </Button>
+        </ModalFooter>
+      </>
+    );
+  };
 
   const renderConfirmationStep = () => (
     <>
