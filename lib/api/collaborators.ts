@@ -480,10 +480,17 @@ export interface MergeCollaboratorsRequest {
   resolved_conflicts?: Record<string, string>;
 }
 
+export interface PreviewField {
+  field_name: string;
+  has_conflict: boolean;
+  values: ConflictValue[];
+}
+
 export interface MergeCollaboratorsResponse {
   success: boolean;
   message: string;
-  conflicts?: ConflictField[];
+  preview_collaborator?: Collaborator;
+  preview_fields?: PreviewField[];
   merged_collaborator_id?: string;
   affected_songs?: number;
   affected_sessions?: number;
@@ -494,6 +501,7 @@ interface MergeCollaboratorsParams {
   targetCollaboratorId: string;
   sourceCollaboratorIds: string[];
   resolvedConflicts?: Record<string, string>;
+  previewOnly?: boolean;
   onSuccess?: (data: MergeCollaboratorsResponse) => void;
   onError?: (error: any) => void;
 }
@@ -503,6 +511,7 @@ export const mergeCollaborators = async ({
   targetCollaboratorId,
   sourceCollaboratorIds,
   resolvedConflicts,
+  previewOnly = true,
   onSuccess,
   onError,
 }: MergeCollaboratorsParams): Promise<MergeCollaboratorsResponse> => {
@@ -513,6 +522,7 @@ export const mergeCollaborators = async ({
         target_collaborator_id: targetCollaboratorId,
         source_collaborator_ids: sourceCollaboratorIds,
         resolved_conflicts: resolvedConflicts,
+        preview_only: previewOnly,
       },
       {
         headers: {
