@@ -194,23 +194,6 @@ const Songs: React.FC = () => {
 
   // Handle song deletion
   const handleDeleteSong = useCallback((songId: string) => {
-    // Optimistically remove the song from cache
-    queryClient.setQueryData(
-      ["tracks", organizationId, queryParams],
-      (oldData: any) => {
-        if (!oldData) return oldData;
-        
-        return {
-          ...oldData,
-          pages: oldData.pages.map((page: any) => ({
-            ...page,
-            tracks: page.tracks.filter((track: Track) => track.id !== songId),
-            total: Math.max(0, (page.total || 0) - 1)
-          }))
-        };
-      }
-    );
-
     // Also invalidate the query to ensure we get fresh data
     queryClient.invalidateQueries({
       queryKey: ["tracks", organizationId]
