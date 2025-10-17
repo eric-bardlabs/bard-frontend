@@ -215,6 +215,7 @@ export const MergeSongsModal: React.FC<MergeSongsModalProps> = ({
               setSelectedTracks(tracks);
             }}
             title="Search and select tracks to merge"
+            keepSearchOnSelect={true}
           />
           
           <div className="bg-warning-50 border border-warning-200 rounded-lg p-3">

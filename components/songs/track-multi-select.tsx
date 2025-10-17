@@ -29,6 +29,7 @@ type Props = {
   maxItems?: number;
   onSelect?: (track: Track) => void;
   onUnselect?: (trackId: string) => void;
+  keepSearchOnSelect?: boolean;
 };
 
 const ITEMS_PER_PAGE = 20;
@@ -40,6 +41,7 @@ export function TrackMultiSelect({
   maxItems,
   onSelect,
   onUnselect,
+  keepSearchOnSelect = false,
 }: Props) {
   const { getToken } = useAuth();
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -154,7 +156,9 @@ export function TrackMultiSelect({
       return;
     }
     
-    setSearchValue("");
+    if (!keepSearchOnSelect) {
+      setSearchValue("");
+    }
     setSelectedInternal((prev) => {
       const newSelected = [...prev, option];
       setSelected(newSelected);
