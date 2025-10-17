@@ -29,7 +29,6 @@ export const UserProvider = ({ children }: PropsWithChildren) => {
     },
     queryKey: ["user"],
     staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: true,
   });
 
   const handleRefetch = () => {
