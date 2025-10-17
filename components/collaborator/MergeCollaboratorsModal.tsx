@@ -48,6 +48,16 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
     return null;
   }
 
+  const getDisplayName = (collaborator?: Collaborator) => {
+    return collaborator?.artist_name || collaborator?.legal_name || "Unknown";
+  };
+  // Convert target collaborator to selection format
+  const targetCollaboratorSelection: CollaboratorSelection = {
+    id: targetCollaborator.id,
+    label: getDisplayName(targetCollaborator),
+    subtitle: targetCollaborator.email,
+  };
+
   // State
   const [selectedCollaborators, setSelectedCollaborators] = useState<CollaboratorSelection[]>([]);
   const [conflicts, setConflicts] = useState<ConflictField[]>([]);
@@ -69,14 +79,14 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
       return mergeCollaborators({
         token,
         targetCollaboratorId: targetCollaborator.id,
-        sourceCollaboratorIds: selectedCollaborators.map(c => c.id),
+        sourceCollaboratorIds: selectedCollaborators.filter(c => c.id !== targetCollaborator.id).map(c => c.id),
         resolvedConflicts,
       });
     },
     onSuccess: (data: MergeCollaboratorsResponse) => {
       if (data.success) {
         toast.success(
-          `Successfully merged ${selectedCollaborators.length} collaborators. ` +
+          `Successfully merged ${selectedCollaborators.filter(c => c.id !== targetCollaborator.id).length} collaborators. ` +
           `${data.affected_songs} songs and ${data.affected_sessions} sessions updated.`
         );
         queryClient.invalidateQueries({ queryKey: ["myCollaborators"] });
@@ -118,7 +128,8 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
   }, [isOpen]);
 
   const handleDetectConflicts = () => {
-    if (selectedCollaborators.length === 0) {
+    const sourceCollaborators = selectedCollaborators.filter(c => c.id !== targetCollaborator.id);
+    if (sourceCollaborators.length === 0) {
       toast.error("Please select at least one collaborator to merge");
       return;
     }
@@ -148,10 +159,6 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
     }));
   };
 
-  const getDisplayName = (collaborator?: Collaborator) => {
-    return collaborator?.artist_name || collaborator?.legal_name || "Unknown";
-  };
-
   return (
     <Modal 
       isOpen={isOpen} 
@@ -163,9 +170,6 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
           <h2 className="text-large">Merge Collaborators</h2>
-          <p className="text-small text-default-500">
-            Merge other collaborators into: <strong>{getDisplayName(targetCollaborator)}</strong>
-          </p>
         </ModalHeader>
 
         <ModalBody>
@@ -173,28 +177,12 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
             // Step 1: Select collaborators to merge
             <div className="space-y-4">
               <div className="mb-4">
-                <p className="text-small text-default-500">
-                  This will merge selected collaborators into one, including their splits, relationships, session attendance, etc.
+                <p className="text-medium">
+                  Select collaborators to merge with <span className="font-semibold text-primary">{getDisplayName(targetCollaborator)}</span>
                 </p>
               </div>
 
               <div>
-                <h3 className="text-medium font-semibold mb-2">Target Collaborator</h3>
-                <Card>
-                  <CardBody>
-                    <User
-                      name={getDisplayName(targetCollaborator)}
-                      description={targetCollaborator.email}
-                      avatarProps={{ radius: "sm" }}
-                    />
-                  </CardBody>
-                </Card>
-              </div>
-
-              <div>
-                <h3 className="text-medium font-semibold mb-2">
-                  Select Collaborators to Merge Into Target
-                </h3>
                 <CollaboratorMultiSelect
                   defaultSelected={selectedCollaborators}
                   setSelected={setSelectedCollaborators}
@@ -203,18 +191,11 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
                 />
               </div>
 
-              {selectedCollaborators.length > 0 && (
-                <div>
-                  <h4 className="text-small font-medium mb-2">Selected for Merge:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedCollaborators.map((collaborator) => (
-                      <Chip key={collaborator.id} size="sm" variant="flat">
-                        {collaborator.label}
-                      </Chip>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <div>
+                <p className="text-small text-default-500">
+                  This will merge selected collaborators into one, including their splits, relationships, session attendance, etc.
+                </p>
+              </div>
             </div>
           ) : (
             // Step 2: Resolve conflicts
@@ -245,7 +226,6 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
                         {conflict.values.map((conflictValue) => (
                           <SelectItem 
                             key={conflictValue.value || ""} 
-                            value={conflictValue.value || ""}
                             textValue={`${conflictValue.source_name}: ${conflictValue.value || "(empty)"}`}
                           >
                             <div className="flex items-center gap-2">
@@ -274,7 +254,7 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
               color="primary"
               onPress={handleDetectConflicts}
               isLoading={isDetectingConflicts}
-              isDisabled={selectedCollaborators.length === 0}
+              isDisabled={selectedCollaborators.filter(c => c.id !== targetCollaborator.id).length === 0}
             >
               {isDetectingConflicts ? "Checking for Conflicts..." : "Next"}
             </Button>
