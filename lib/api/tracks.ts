@@ -456,5 +456,4 @@ export type {
   TrackCollaborator,
   TrackCollaboratorInput,
   DeleteTrackResponse,
-  PreviewFieldValue
 };

@@ -13,7 +13,7 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { TrackMultiSelect, TrackOption } from "./track-multi-select";
-import { Track, mergeTracks, PreviewTrackField, PreviewFieldValue, UpdateTrackData } from "@/lib/api/tracks";
+import { Track, mergeTracks, PreviewTrackField, UpdateTrackData } from "@/lib/api/tracks";
 import { toast } from "sonner";
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
