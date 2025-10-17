@@ -19,15 +19,17 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { Track, TrackCollaborator } from "@/lib/api/tracks";
-import { updateTrack } from "@/lib/api/tracks";
+import { updateTrack, deleteTrack } from "@/lib/api/tracks";
 import { useAuth } from "@clerk/nextjs";
 import { AlbumSingleSelect } from "@/components/album/AlbumSingleSelect";
+import { toast } from "sonner";
 import dayjs from "dayjs";
 
 interface SongsTableProps {
   songs: Track[];
   onSongSelect?: (songId: string) => void;
   onUpdateSong?: (songId: string, field: keyof Track, value: string) => void;
+  onDeleteSong?: (songId: string) => void;
   uniqueStatuses: string[];
 }
 
@@ -35,6 +37,7 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
   songs,
   onSongSelect,
   onUpdateSong,
+  onDeleteSong,
   uniqueStatuses,
 }) => {
   const { getToken } = useAuth();
@@ -44,6 +47,9 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
   >({});
   const [updateErrors, setUpdateErrors] = React.useState<
     Record<string, string>
+  >({});
+  const [deletingTracks, setDeletingTracks] = React.useState<
+    Record<string, boolean>
   >({});
 
   // Helper function to get album name from track object
@@ -127,6 +133,44 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
       }));
     }
   }, [getToken, onUpdateSong]);
+
+  // Handle track deletion
+  const handleDeleteTrack = React.useCallback(async (songId: string, songName: string) => {
+    try {
+      setDeletingTracks((prev) => ({
+        ...prev,
+        [songId]: true,
+      }));
+
+      // Get auth token
+      const token = await getToken({ template: "bard-backend" });
+      if (!token) throw new Error("No auth token");
+
+      // Call delete API
+      await deleteTrack({
+        token,
+        trackId: songId,
+        onSuccess: (response) => {
+          toast.success(
+            `"${songName}" deleted successfully. ${response.collaborators_removed} collaborators removed, ${response.external_links_removed} external links removed, ${response.sessions_affected} sessions affected.`
+          );
+          onDeleteSong?.(songId);
+        },
+        onError: (error) => {
+          console.error(`Failed to delete track ${songId}:`, error);
+          toast.error(`Failed to delete "${songName}"`);
+        },
+      });
+    } catch (error) {
+      console.error(`Failed to delete track ${songId}:`, error);
+      toast.error(`Failed to delete "${songName}"`);
+    } finally {
+      setDeletingTracks((prev) => ({
+        ...prev,
+        [songId]: false,
+      }));
+    }
+  }, [getToken, onDeleteSong]);
 
   // Render editable cell for album and status
   const renderEditableCell = React.useCallback((
@@ -270,6 +314,43 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
       );
   }, [renderEditableCell, statusOptions]);
 
+  // Render actions dropdown
+  const renderActionsCell = React.useCallback((song: Track) => {
+    const isDeleting = deletingTracks[song.id];
+
+    return (
+      <Dropdown>
+        <DropdownTrigger>
+          <div className="flex items-center justify-center cursor-pointer hover:text-primary transition-colors p-1">
+            {isDeleting ? (
+              <Spinner size="sm" color="primary" />
+            ) : (
+              <Icon icon="lucide:more-horizontal" className="text-lg" />
+            )}
+          </div>
+        </DropdownTrigger>
+        <DropdownMenu
+          aria-label="Track actions"
+          disabledKeys={isDeleting ? ["delete"] : []}
+        >
+          <DropdownItem
+            key="delete"
+            className="text-danger"
+            color="danger"
+            startContent={<Icon icon="lucide:trash" className="text-lg" />}
+            onPress={() => {
+              if (confirm(`Are you sure you want to delete "${song.display_name}"? This action cannot be undone.`)) {
+                handleDeleteTrack(song.id, song.display_name || "Untitled");
+              }
+            }}
+          >
+            Delete Track
+          </DropdownItem>
+        </DropdownMenu>
+      </Dropdown>
+    );
+  }, [deletingTracks, handleDeleteTrack]);
+
   return (
     <Table
       aria-label="Songs table"
@@ -288,6 +369,7 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
         <TableColumn>COLLABORATORS</TableColumn>
         <TableColumn>STARTED</TableColumn>
         <TableColumn>RELEASE DATE</TableColumn>
+        <TableColumn width={50}>ACTIONS</TableColumn>
       </TableHeader>
       <TableBody>
         {songs.map((song) => (
@@ -303,6 +385,9 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
             <TableCell>{renderCollaboratorsCell(song.collaborators || [])}</TableCell>
             <TableCell className="cursor-pointer">{formatDate(song.project_start_date)}</TableCell>
             <TableCell className="cursor-pointer">{formatDate(song.release_date)}</TableCell>
+            <TableCell onClick={(e) => e.stopPropagation()}>
+              {renderActionsCell(song)}
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>

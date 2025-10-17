@@ -460,7 +460,7 @@ const Songs: React.FC = () => {
       {/* Results Count */}
       <div className="flex items-center gap-2 text-sm text-default-500 mb-6">
         <span>
-          Total: {totalTracks} songs in your catalog
+          Showing {totalTracks} songs
         </span>
       </div>
 

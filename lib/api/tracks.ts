@@ -112,9 +112,11 @@ interface TracksListResponse {
 }
 
 interface DeleteTrackResponse {
+  success: boolean;
   message: string;
-  deleted_track_id: string;
-  deleted_song_collaborators: number;
+  collaborators_removed: number;
+  external_links_removed: number;
+  sessions_affected: number;
 }
 
 interface CreateTrackParams {
