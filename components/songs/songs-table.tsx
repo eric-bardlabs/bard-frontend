@@ -23,6 +23,7 @@ import { updateTrack, deleteTrack } from "@/lib/api/tracks";
 import { useAuth } from "@clerk/nextjs";
 import { AlbumSingleSelect } from "@/components/album/AlbumSingleSelect";
 import { DeleteTrackModal } from "./DeleteTrackModal";
+import { MergeSongsModal } from "./MergeSongsModal";
 import { toast } from "sonner";
 import dayjs from "dayjs";
 
@@ -57,6 +58,8 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
     id: string;
     name: string;
   } | null>(null);
+  const [mergeModalOpen, setMergeModalOpen] = React.useState(false);
+  const [trackToMerge, setTrackToMerge] = React.useState<Track | null>(null);
 
   // Helper function to get album name from track object
   const getAlbumName = React.useCallback((track: Track) => {
@@ -193,6 +196,26 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
       setTrackToDelete(null);
     }
   }, [trackToDelete, deletingTracks]);
+
+  // Handle opening merge modal
+  const handleOpenMergeModal = React.useCallback((track: Track) => {
+    setTrackToMerge(track);
+    setMergeModalOpen(true);
+  }, []);
+
+  // Handle closing merge modal
+  const handleCloseMergeModal = React.useCallback(() => {
+    setMergeModalOpen(false);
+    setTrackToMerge(null);
+  }, []);
+
+  // Handle successful merge
+  const handleMergeSuccess = React.useCallback(() => {
+    // Invalidate queries to refresh the tracks list
+    // The parent component should handle this via onDeleteSong or similar
+    // For now, we'll just close the modal
+    handleCloseMergeModal();
+  }, [handleCloseMergeModal]);
 
   // Render editable cell for album and status
   const renderEditableCell = React.useCallback((
@@ -353,8 +376,17 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
         </DropdownTrigger>
         <DropdownMenu
           aria-label="Track actions"
-          disabledKeys={isDeleting ? ["delete"] : []}
+          disabledKeys={isDeleting ? ["delete", "merge"] : []}
         >
+          <DropdownItem
+            key="merge"
+            startContent={<Icon icon="lucide:merge" className="text-lg" />}
+            onPress={() => {
+              handleOpenMergeModal(song);
+            }}
+          >
+            Merge Tracks
+          </DropdownItem>
           <DropdownItem
             key="delete"
             className="text-danger"
@@ -369,7 +401,7 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
         </DropdownMenu>
       </Dropdown>
     );
-  }, [deletingTracks, handleOpenDeleteModal]);
+  }, [deletingTracks, handleOpenDeleteModal, handleOpenMergeModal]);
 
   return (
     <>
@@ -421,6 +453,14 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
       onConfirm={handleConfirmDelete}
       trackName={trackToDelete?.name || ""}
       isDeleting={trackToDelete ? deletingTracks[trackToDelete.id] : false}
+    />
+
+    {/* Merge tracks modal */}
+    <MergeSongsModal
+      isOpen={mergeModalOpen}
+      onClose={handleCloseMergeModal}
+      targetTrack={trackToMerge || undefined}
+      onMergeSuccess={handleMergeSuccess}
     />
   </>
   );
