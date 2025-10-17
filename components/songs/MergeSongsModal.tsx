@@ -175,7 +175,6 @@ export const MergeSongsModal: React.FC<MergeSongsModalProps> = ({
         );
         
         setCurrentStep("confirmation");
-        onMergeSuccess?.();
       }
     } catch (error: any) {
       console.error("Failed to merge tracks:", error);
@@ -411,7 +410,7 @@ export const MergeSongsModal: React.FC<MergeSongsModalProps> = ({
               Successfully merged {selectedTracks.length} tracks
             </p>
             <p className="text-success-700 text-sm mt-1">
-              All data has been consolidated into "{targetTrack?.display_name || "Untitled"}"
+              All data has been consolidated into "{previewData.display_name || targetTrack?.display_name || "Untitled"}"
             </p>
           </div>
           
@@ -422,7 +421,7 @@ export const MergeSongsModal: React.FC<MergeSongsModalProps> = ({
       </ModalBody>
 
       <ModalFooter>
-        <Button variant="light" onPress={onClose}>
+        <Button variant="light" onPress={handleModalClose}>
           Close
         </Button>
         <Button color="primary" onPress={handleGoToTrack}>
@@ -446,10 +445,17 @@ export const MergeSongsModal: React.FC<MergeSongsModalProps> = ({
     );
   }
 
+  const handleModalClose = () => {
+    if (currentStep === "confirmation") {
+      onMergeSuccess?.();
+    }
+    onClose();
+  };
+
   return (
     <Modal 
       isOpen={isOpen} 
-      onClose={onClose} 
+      onClose={handleModalClose} 
       size="2xl" 
       scrollBehavior="inside"
       isDismissable={!isMerging}
