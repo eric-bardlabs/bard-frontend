@@ -13,6 +13,7 @@ import { OrganizationMembersList } from "./organization-members-list";
 import { useQueryClient } from "@tanstack/react-query";
 import { BasicInformationData } from "@/components/types/onboarding";
 import { typeid } from "typeid-js";
+import { CollaboratorBasicData } from "@/components/collaborator/CollaboratorBasicFields";
 
 interface ArtistAndOrganizationProps {
   data: BasicInformationData;
@@ -217,7 +218,7 @@ export default function ArtistAndOrganization({
             onClose={() => {
               setIsAddingCollaborator(false);
             }}
-            onSubmit={async (collaboratorData) => {
+            onSubmit={async (collaboratorData: CollaboratorBasicData) => {
               // Add to organizationMembers state
               onUpdate({
                 ...data,
@@ -225,16 +226,7 @@ export default function ArtistAndOrganization({
                   ...(data.organization_members || []),
                   {
                     id: typeid("collabprofile").toString(),
-                    legal_name: collaboratorData.legal_name,
-                    artist_name: collaboratorData.artist_name,
-                    email: collaboratorData.email,
-                    region: collaboratorData.region,
-                    pro: collaboratorData.pro,
-                    pro_id: collaboratorData.pro_id,
-                    profile_link: collaboratorData.profile_link,
-                    bio: collaboratorData.bio,
-                    phone_number: collaboratorData.phone_number,
-                    initial_source: collaboratorData.initial_source,
+                    ...collaboratorData,
                   },
                 ],
               });

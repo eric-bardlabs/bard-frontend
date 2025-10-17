@@ -10,8 +10,8 @@ export interface IdentityData {
 
 export interface OrganizationMember {
   id?: string;
-  legal_name: string;
-  artist_name: string;
+  legal_name?: string;
+  artist_name?: string;
   email?: string;
   pro?: string;
   pro_id?: string;

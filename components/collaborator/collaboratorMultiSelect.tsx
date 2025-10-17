@@ -22,6 +22,7 @@ type Props = {
   setSelected: (value: CollaboratorSelection[]) => void;
   title?: string;
   maxItems?: number;
+  keepSearchOnSelect?: boolean;
 };
 
 const ITEMS_PER_PAGE = 20;
@@ -31,6 +32,7 @@ export function CollaboratorMultiSelect({
   setSelected,
   title,
   maxItems,
+  keepSearchOnSelect = false,
 }: Props) {
   const { getToken } = useAuth();
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -134,7 +136,9 @@ export function CollaboratorMultiSelect({
       return;
     }
     
-    setSearchValue("");
+    if (!keepSearchOnSelect) {
+      setSearchValue("");
+    }
     setSelectedInternal((prev) => {
       const newSelected = [...prev, option];
       setSelected(newSelected);

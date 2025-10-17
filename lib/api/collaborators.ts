@@ -460,3 +460,96 @@ export const fetchMyCollaboratorProfile = async ({
     throw error;
   }
 };
+
+export interface UpdateCollaboratorRequest {
+  legal_name?: string;
+  artist_name?: string;
+  email?: string;
+  pro?: string;
+  pro_id?: string;
+  phone_number?: string;
+  region?: string;
+  profile_link?: string;
+  bio?: string;
+}
+
+export interface UpdateCollaboratorRelationshipsRequest {
+  managers: string[];
+  members: string[];
+  publishing_entities: string[];
+}
+
+export interface MergeCollaboratorsRequest {
+  target_collaborator_id: string;
+  source_collaborator_ids: string[];
+  preview_only?: boolean;
+  final_collaborator_data?: UpdateCollaboratorRequest;
+  final_relationships?: UpdateCollaboratorRelationshipsRequest;
+}
+
+export interface PreviewField {
+  field_name: string;
+  has_conflict: boolean;
+  values: string[];
+}
+
+export interface MergeCollaboratorsResponse {
+  success: boolean;
+  message: string;
+  preview_fields?: PreviewField[];
+  preview_relationships?: CollaboratorRelationships;
+  merged_collaborator_id?: string;
+  affected_songs?: number;
+  affected_sessions?: number;
+}
+
+interface MergeCollaboratorsParams {
+  token: string;
+  targetCollaboratorId: string;
+  sourceCollaboratorIds: string[];
+  previewOnly?: boolean;
+  finalCollaboratorData?: UpdateCollaboratorRequest;
+  finalRelationships?: UpdateCollaboratorRelationshipsRequest;
+  onSuccess?: (data: MergeCollaboratorsResponse) => void;
+  onError?: (error: any) => void;
+}
+
+export const mergeCollaborators = async ({
+  token,
+  targetCollaboratorId,
+  sourceCollaboratorIds,
+  previewOnly = true,
+  finalCollaboratorData,
+  finalRelationships,
+  onSuccess,
+  onError,
+}: MergeCollaboratorsParams): Promise<MergeCollaboratorsResponse> => {
+  try {
+    const response = await axios.post<MergeCollaboratorsResponse>(
+      `${API_BASE_URL}/collaborators/merge`,
+      {
+        target_collaborator_id: targetCollaboratorId,
+        source_collaborator_ids: sourceCollaboratorIds,
+        preview_only: previewOnly,
+        final_collaborator_data: finalCollaboratorData,
+        final_relationships: finalRelationships,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    
+    if (onSuccess) {
+      onSuccess(response.data);
+    }
+    
+    return response.data;
+  } catch (error) {
+    if (onError) {
+      onError(error);
+    }
+    throw error;
+  }
+};

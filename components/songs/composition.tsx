@@ -42,7 +42,7 @@ export const Composition = (props: {
     if (props.song?.collaborators && props.song.collaborators.length > 0) {
       return props.song.collaborators.map((collab: TrackCollaborator) => ({
         id: collab.id,
-        collaboratorName: collab.artist_name || collab.legal_name || "",
+        collaboratorName: collab.legal_name || collab.artist_name || "",
         collaboratorEmail: collab.email || "",
         songwriting: collab.songwriting_split?.toString() || "",
         publishing: collab.publishing_split?.toString() || "",

@@ -45,36 +45,34 @@ const CollaboratorModal: React.FC<CollaboratorModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [collaboratorData, setCollaboratorData] = useState<CollaboratorBasicData>({
-    legalName: "",
-    artistName: "",
+    legal_name: "",
+    artist_name: "",
     email: "",
     region: "",
     pro: "",
-    proId: "",
-    profileLink: "",
+    pro_id: "",
+    profile_link: "",
     bio: "",
-    phoneNumber: "",
+    phone_number: "",
   });
 
   const [selectedManagers, setSelectedManagers] = useState<CollaboratorSelection[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<CollaboratorSelection[]>([]);
   const [selectedEntities, setSelectedEntities] = useState<CollaboratorSelection[]>([]);
-  const [phoneNumber, setPhoneNumber] = useState<string | undefined>();
 
 
   const resetForm = () => {
     setCollaboratorData({
-      legalName: "",
-      artistName: "",
+      legal_name: "",
+      artist_name: "",
       email: "",
       region: "",
       pro: "",
-      proId: "",
-      profileLink: "",
+      pro_id: "",
+      profile_link: "",
       bio: "",
-      phoneNumber: "",
+      phone_number: "",
     });
-    setPhoneNumber(undefined);
     setSelectedManagers([]);
     setSelectedMembers([]);
     setSelectedEntities([]);
@@ -82,18 +80,7 @@ const CollaboratorModal: React.FC<CollaboratorModalProps> = ({
 
   useEffect(() => {
     if (collaborator) {
-      setCollaboratorData({
-        legalName: collaborator.legal_name || "",
-        artistName: collaborator.artist_name || "",
-        email: collaborator.email || "",
-        region: collaborator.region || "",
-        pro: collaborator.pro || "",
-        proId: collaborator.pro_id || "",
-        profileLink: collaborator.profile_link || "",
-        bio: collaborator.bio || "",
-        phoneNumber: collaborator.phone_number || "",
-      });
-      setPhoneNumber(collaborator.phone_number || undefined);
+      setCollaboratorData(collaborator);
 
       // Load existing relationships if available
       if (collaborator.relationships) {
@@ -146,15 +133,7 @@ const CollaboratorModal: React.FC<CollaboratorModalProps> = ({
       const newCollaborator = await saveCollaborator({
         token,
         collaboratorData: {
-          legal_name: collaboratorData.legalName,
-          artist_name: collaboratorData.artistName,
-          email: collaboratorData.email,
-          region: collaboratorData.region,
-          pro: collaboratorData.pro,
-          pro_id: collaboratorData.proId,
-          profile_link: collaboratorData.profileLink,
-          bio: collaboratorData.bio,
-          phone_number: phoneNumber || "",
+          ...collaboratorData,
           initial_source: creationSource || "",
         },
       });
@@ -196,17 +175,7 @@ const CollaboratorModal: React.FC<CollaboratorModalProps> = ({
       const updatedCollaborator = await updateCollaborator({
         token,
         id: collaborator.id,
-        updates: {
-          legal_name: collaboratorData.legalName,
-          artist_name: collaboratorData.artistName,
-          email: collaboratorData.email,
-          region: collaboratorData.region,
-          pro: collaboratorData.pro,
-          pro_id: collaboratorData.proId,
-          profile_link: collaboratorData.profileLink,
-          bio: collaboratorData.bio,
-          phone_number: phoneNumber || "",
-        },
+        updates: collaboratorData,
       });
 
       // Update relationships if the section is shown
@@ -277,8 +246,6 @@ const CollaboratorModal: React.FC<CollaboratorModalProps> = ({
                 <CollaboratorBasicFields
                   data={collaboratorData}
                   onChange={handleCollaboratorDataChange}
-                  phoneNumber={phoneNumber}
-                  onPhoneChange={setPhoneNumber}
                 />
 
                 {/* Row 6 - Relationships */}
@@ -336,7 +303,7 @@ const CollaboratorModal: React.FC<CollaboratorModalProps> = ({
                 color="primary"
                 onPress={() => onSubmit()}
                 isLoading={isSubmitting}
-                isDisabled={!collaboratorData.artistName && !collaboratorData.legalName}
+                isDisabled={!collaboratorData.artist_name && !collaboratorData.legal_name}
               >
                 {collaborator ? "Update" : "Add"} Collaborator
               </Button>
