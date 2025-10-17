@@ -98,34 +98,81 @@ export const CollaboratorBasicFields: React.FC<CollaboratorBasicFieldsProps> = (
             </Select>
             
             {showCustomInput[fieldName] && (
-              <Input
-                placeholder={`Enter ${label}...`}
-                label={`Enter ${label}`}
-                value={data[fieldName] || ""}
-                onChange={(e) => preview.onFieldChange(fieldName as keyof CollaboratorBasicData, e.target.value)}
-                variant="bordered"
-                className="w-full"
-              />
+              fieldName === "phone_number" ? (
+                <div className="w-full">
+                  <label className="text-sm font-medium text-foreground pb-1.5 block">Enter {label}</label>
+                  <PhoneInput
+                    placeholder={`Enter ${label}...`}
+                    value={data[fieldName] || ""}
+                    onChange={(value) => preview.onFieldChange(fieldName as keyof CollaboratorBasicData, value || "")}
+                    className="w-full"
+                    defaultCountry="US"
+                    inputComponent={Input}
+                    inputProps={{
+                      variant: "bordered",
+                      labelPlacement: "outside"
+                    }}
+                  />
+                </div>
+              ) : (
+                <Input
+                  placeholder={`Enter ${label}...`}
+                  label={`Enter ${label}`}
+                  value={data[fieldName] || ""}
+                  onChange={(e) => preview.onFieldChange(fieldName as keyof CollaboratorBasicData, e.target.value)}
+                  variant="bordered"
+                  className="w-full"
+                />
+              )
             )}
             
             <p className="text-xs text-warning">⚠️ Conflict detected</p>
           </div>
         );
     } else {
-      // Default field - regular input
-      return (
-        <Input
-          label={label}
-          name={fieldName}
-          type={type}
-          placeholder={placeholder}
-          value={data[fieldName]}
-          onChange={onChange}
-          variant="bordered"
-          labelPlacement="outside"
-          className={className}
-        />
-      );
+      // Default field - regular input or PhoneInput for phone_number
+      if (fieldName === "phone_number") {
+        return (
+          <div className={className}>
+            <label className="text-sm font-medium text-foreground pb-1.5 block">{label}</label>
+            <PhoneInput
+              placeholder={placeholder}
+              value={data[fieldName] || ""}
+              onChange={(value) => {
+                // Create a synthetic event for compatibility
+                const syntheticEvent = {
+                  target: {
+                    name: fieldName,
+                    value: value || ""
+                  }
+                } as React.ChangeEvent<HTMLInputElement>;
+                onChange(syntheticEvent);
+              }}
+              className="w-full"
+              defaultCountry="US"
+              inputComponent={Input}
+              inputProps={{
+                variant: "bordered",
+                labelPlacement: "outside"
+              }}
+            />
+          </div>
+        );
+      } else {
+        return (
+          <Input
+            label={label}
+            name={fieldName}
+            type={type}
+            placeholder={placeholder}
+            value={data[fieldName]}
+            onChange={onChange}
+            variant="bordered"
+            labelPlacement="outside"
+            className={className}
+          />
+        );
+      }
     }
   };
   return (
