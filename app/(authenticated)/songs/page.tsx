@@ -192,6 +192,14 @@ const Songs: React.FC = () => {
     tracksQuery.refetch();
   }, [tracksQuery.refetch]);
 
+  // Handle song deletion
+  const handleDeleteSong = useCallback((songId: string) => {
+    // Also invalidate the query to ensure we get fresh data
+    queryClient.invalidateQueries({
+      queryKey: ["tracks", organizationId]
+    });
+  }, [queryClient, organizationId, queryParams]);
+
   // Handle create new options
   const handleCreateOption = useCallback((key: React.Key) => {
     const option = key.toString() as CreateOption;
@@ -460,7 +468,7 @@ const Songs: React.FC = () => {
       {/* Results Count */}
       <div className="flex items-center gap-2 text-sm text-default-500 mb-6">
         <span>
-          Total: {totalTracks} songs in your catalog
+          Showing {totalTracks} songs
         </span>
       </div>
 
@@ -493,6 +501,7 @@ const Songs: React.FC = () => {
                 songs={allTracks}
                 onSongSelect={handleSongSelect}
                 onUpdateSong={updateSongField}
+                onDeleteSong={handleDeleteSong}
                 uniqueStatuses={STATUSES}
               />
             )}

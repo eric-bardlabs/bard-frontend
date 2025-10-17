@@ -19,15 +19,19 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { Track, TrackCollaborator } from "@/lib/api/tracks";
-import { updateTrack } from "@/lib/api/tracks";
+import { updateTrack, deleteTrack } from "@/lib/api/tracks";
 import { useAuth } from "@clerk/nextjs";
 import { AlbumSingleSelect } from "@/components/album/AlbumSingleSelect";
+import { DeleteTrackModal } from "./DeleteTrackModal";
+import { MergeSongsModal } from "./MergeSongsModal";
+import { toast } from "sonner";
 import dayjs from "dayjs";
 
 interface SongsTableProps {
   songs: Track[];
   onSongSelect?: (songId: string) => void;
   onUpdateSong?: (songId: string, field: keyof Track, value: string) => void;
+  onDeleteSong?: (songId: string) => void;
   uniqueStatuses: string[];
 }
 
@@ -35,6 +39,7 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
   songs,
   onSongSelect,
   onUpdateSong,
+  onDeleteSong,
   uniqueStatuses,
 }) => {
   const { getToken } = useAuth();
@@ -45,6 +50,16 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
   const [updateErrors, setUpdateErrors] = React.useState<
     Record<string, string>
   >({});
+  const [deletingTracks, setDeletingTracks] = React.useState<
+    Record<string, boolean>
+  >({});
+  const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
+  const [trackToDelete, setTrackToDelete] = React.useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [mergeModalOpen, setMergeModalOpen] = React.useState(false);
+  const [trackToMerge, setTrackToMerge] = React.useState<Track | null>(null);
 
   // Helper function to get album name from track object
   const getAlbumName = React.useCallback((track: Track) => {
@@ -127,6 +142,87 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
       }));
     }
   }, [getToken, onUpdateSong]);
+
+  // Handle opening delete modal
+  const handleOpenDeleteModal = React.useCallback((songId: string, songName: string) => {
+    setTrackToDelete({ id: songId, name: songName });
+    setDeleteModalOpen(true);
+  }, []);
+
+  // Handle confirming deletion
+  const handleConfirmDelete = React.useCallback(async () => {
+    if (!trackToDelete) return;
+
+    const { id: songId, name: songName } = trackToDelete;
+
+    try {
+      setDeletingTracks((prev) => ({
+        ...prev,
+        [songId]: true,
+      }));
+
+      // Get auth token
+      const token = await getToken({ template: "bard-backend" });
+      if (!token) throw new Error("No auth token");
+
+      // Call delete API
+      const response = await deleteTrack({
+        token,
+        trackId: songId,
+      });
+
+      // Handle successful deletion
+      toast.success(
+        `"${songName}" deleted successfully. ${response.collaborators_removed} collaborators removed, ${response.external_links_removed} external links removed, ${response.sessions_affected} sessions affected.`
+      );
+      onDeleteSong?.(songId);
+      setDeleteModalOpen(false);
+      setTrackToDelete(null);
+    } catch (error) {
+      console.error(`Failed to delete track ${songId}:`, error);
+      toast.error(`Failed to delete "${songName}"`);
+    } finally {
+      setDeletingTracks((prev) => ({
+        ...prev,
+        [songId]: false,
+      }));
+    }
+  }, [getToken, onDeleteSong, trackToDelete]);
+
+  // Handle closing modal
+  const handleCloseDeleteModal = React.useCallback(() => {
+    if (trackToDelete && !deletingTracks[trackToDelete.id]) {
+      setDeleteModalOpen(false);
+      setTrackToDelete(null);
+    }
+  }, [trackToDelete, deletingTracks]);
+
+  // Handle opening merge modal
+  const handleOpenMergeModal = React.useCallback((track: Track) => {
+    setTrackToMerge(track);
+    setMergeModalOpen(true);
+  }, []);
+
+  // Handle closing merge modal
+  const handleCloseMergeModal = React.useCallback(() => {
+    setMergeModalOpen(false);
+    setTrackToMerge(null);
+  }, []);
+
+  // Handle successful merge
+  const handleMergeSuccess = React.useCallback(() => {
+    // Close the modal
+    handleCloseMergeModal();
+    
+    // Trigger a data refresh by calling onDeleteSong for merged tracks
+    // This will cause the parent component to refetch/update the track list
+    if (trackToMerge && onDeleteSong) {
+      // Note: In a real implementation, we'd know which tracks were merged
+      // For now, we trigger a general refresh by "deleting" the target track
+      // which should cause the parent to refetch all data
+      onDeleteSong(trackToMerge.id);
+    }
+  }, [handleCloseMergeModal, trackToMerge, onDeleteSong]);
 
   // Render editable cell for album and status
   const renderEditableCell = React.useCallback((
@@ -270,7 +366,52 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
       );
   }, [renderEditableCell, statusOptions]);
 
+  // Render actions dropdown
+  const renderActionsCell = React.useCallback((song: Track) => {
+    const isDeleting = deletingTracks[song.id];
+
+    return (
+      <Dropdown>
+        <DropdownTrigger>
+          <div className="flex items-center justify-center cursor-pointer hover:text-primary transition-colors p-1">
+            {isDeleting ? (
+              <Spinner size="sm" color="primary" />
+            ) : (
+              <Icon icon="lucide:more-horizontal" className="text-lg" />
+            )}
+          </div>
+        </DropdownTrigger>
+        <DropdownMenu
+          aria-label="Track actions"
+          disabledKeys={isDeleting ? ["delete", "merge"] : []}
+        >
+          <DropdownItem
+            key="merge"
+            startContent={<Icon icon="lucide:merge" className="text-lg" />}
+            onPress={() => {
+              handleOpenMergeModal(song);
+            }}
+          >
+            Merge Tracks
+          </DropdownItem>
+          <DropdownItem
+            key="delete"
+            className="text-danger"
+            color="danger"
+            startContent={<Icon icon="lucide:trash" className="text-lg" />}
+            onPress={() => {
+              handleOpenDeleteModal(song.id, song.display_name || "Untitled");
+            }}
+          >
+            Delete Track
+          </DropdownItem>
+        </DropdownMenu>
+      </Dropdown>
+    );
+  }, [deletingTracks, handleOpenDeleteModal, handleOpenMergeModal]);
+
   return (
+    <>
     <Table
       aria-label="Songs table"
       removeWrapper
@@ -288,6 +429,7 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
         <TableColumn>COLLABORATORS</TableColumn>
         <TableColumn>STARTED</TableColumn>
         <TableColumn>RELEASE DATE</TableColumn>
+        <TableColumn width={50}>ACTIONS</TableColumn>
       </TableHeader>
       <TableBody>
         {songs.map((song) => (
@@ -303,9 +445,30 @@ export const SongsTable: React.FC<SongsTableProps> = React.memo(({
             <TableCell>{renderCollaboratorsCell(song.collaborators || [])}</TableCell>
             <TableCell className="cursor-pointer">{formatDate(song.project_start_date)}</TableCell>
             <TableCell className="cursor-pointer">{formatDate(song.release_date)}</TableCell>
+            <TableCell onClick={(e) => e.stopPropagation()}>
+              {renderActionsCell(song)}
+            </TableCell>
           </TableRow>
         ))}
       </TableBody>
     </Table>
+
+    {/* Delete confirmation modal */}
+    <DeleteTrackModal
+      isOpen={deleteModalOpen}
+      onClose={handleCloseDeleteModal}
+      onConfirm={handleConfirmDelete}
+      trackName={trackToDelete?.name || ""}
+      isDeleting={trackToDelete ? deletingTracks[trackToDelete.id] : false}
+    />
+
+    {/* Merge tracks modal */}
+    <MergeSongsModal
+      isOpen={mergeModalOpen}
+      onClose={handleCloseMergeModal}
+      targetTrack={trackToMerge || undefined}
+      onMergeSuccess={handleMergeSuccess}
+    />
+  </>
   );
 });

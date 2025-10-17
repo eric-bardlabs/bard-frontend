@@ -112,9 +112,46 @@ interface TracksListResponse {
 }
 
 interface DeleteTrackResponse {
+  success: boolean;
   message: string;
-  deleted_track_id: string;
-  deleted_song_collaborators: number;
+  collaborators_removed: number;
+  external_links_removed: number;
+  sessions_affected: number;
+}
+
+export interface PreviewFieldValue {
+  value: string;  // The actual value (ID for album/artist, raw value for others)
+  display_value: string;  // The display value (name for album/artist, same as value for others)
+}
+
+export interface PreviewTrackField {
+  field_name: string;
+  has_conflict: boolean;
+  values: PreviewFieldValue[];
+}
+
+export interface MergeTracksRequest {
+  target_track_id: string;
+  source_track_ids: string[];
+  preview_only: boolean;
+  final_track_data?: UpdateTrackData;
+}
+
+export interface MergeTracksResponse {
+  success: boolean;
+  message: string;
+  preview_fields?: PreviewTrackField[];
+  merged_track_id?: string;
+  affected_collaborators?: number;
+  affected_sessions?: number;
+  affected_external_links?: number;
+}
+
+interface MergeTracksParams {
+  token: string;
+  request: MergeTracksRequest;
+  onSuccess?: (data: MergeTracksResponse) => void;
+  onError?: (error: any) => void;
 }
 
 interface CreateTrackParams {
@@ -229,6 +266,37 @@ export const deleteTrack = async ({
       {
         headers: {
           Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (onSuccess) {
+      onSuccess(response.data);
+    }
+
+    return response.data;
+  } catch (error) {
+    if (onError) {
+      onError(error);
+    }
+    throw error;
+  }
+};
+
+export const mergeTracks = async ({
+  token,
+  request,
+  onSuccess,
+  onError,
+}: MergeTracksParams): Promise<MergeTracksResponse> => {
+  try {
+    const response = await axios.post<MergeTracksResponse>(
+      `${API_BASE_URL}/tracks/merge`,
+      request,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       }
     );
@@ -387,5 +455,5 @@ export type {
   UpdateTrackData, 
   TrackCollaborator,
   TrackCollaboratorInput,
-  DeleteTrackResponse 
+  DeleteTrackResponse,
 };
