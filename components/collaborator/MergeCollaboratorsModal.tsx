@@ -26,6 +26,12 @@ import {
 } from "@/lib/api/collaborators";
 import { CollaboratorBasicData } from "./CollaboratorBasicFields";
 
+export interface PreviewRelationships {
+  managers: CollaboratorSelection[];
+  members: CollaboratorSelection[];
+  publishing_entities: CollaboratorSelection[];
+}
+
 interface MergeCollaboratorsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -48,7 +54,7 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
   // State
   const [selectedCollaborators, setSelectedCollaborators] = useState<CollaboratorSelection[]>([]);
   const [previewFields, setPreviewFields] = useState<PreviewField[]>([]);
-  const [previewRelationships, setPreviewRelationships] = useState<CollaboratorRelationships | null>(null);
+  const [previewRelationships, setPreviewRelationships] = useState<PreviewRelationships | null>(null);
   const [previewData, setPreviewData] = useState<CollaboratorBasicData>({
     artist_name: "",
     legal_name: "",
@@ -95,7 +101,23 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
     onSuccess: (data: MergeCollaboratorsResponse) => {
       if (data.success && data.preview_fields && data.preview_relationships) {
         setPreviewFields(data.preview_fields);
-        setPreviewRelationships(data.preview_relationships);
+        setPreviewRelationships({
+          managers: data.preview_relationships.managers.map(m => ({
+            id: m.id,
+            label: m.artist_name || m.legal_name || "Unknown",
+            subtitle: m.email,
+          })),
+          members: data.preview_relationships.members.map(m => ({
+            id: m.id,
+            label: m.artist_name || m.legal_name || "Unknown",
+            subtitle: m.email,
+          })),
+          publishing_entities: data.preview_relationships.publishing_entities.map(e => ({
+            id: e.id,
+            label: e.artist_name || e.legal_name || "Unknown",
+            subtitle: e.email,
+          })),
+        });
         
         // Initialize preview data with target collaborator defaults and merged values
         initializePreviewData(data.preview_fields);
@@ -211,6 +233,10 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
     }));
   };
 
+  const handleRelationshipsChange = (relationships: PreviewRelationships) => {
+    setPreviewRelationships(relationships);
+  };
+
   return (
     <Modal 
       isOpen={isOpen} 
@@ -256,6 +282,7 @@ export const MergeCollaboratorsModal: React.FC<MergeCollaboratorsModalProps> = (
               previewRelationships={previewRelationships}
               previewData={previewData}
               onPreviewDataChange={handlePreviewDataChange}
+              onRelationshipsChange={handleRelationshipsChange}
             />
           )}
         </ModalBody>

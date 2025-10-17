@@ -1,17 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   CollaboratorRelationships,
   PreviewField,
 } from "@/lib/api/collaborators";
 import { CollaboratorBasicFields, CollaboratorBasicData } from "./CollaboratorBasicFields";
+import { CollaboratorMultiSelect } from "./collaboratorMultiSelect";
+import { CollaboratorSelection } from "./types";
+import { PreviewRelationships } from "./MergeCollaboratorsModal";
 
 interface MergePreviewStepProps {
   previewFields: PreviewField[];
-  previewRelationships: CollaboratorRelationships | null;
+  previewRelationships: PreviewRelationships | null;
   previewData: CollaboratorBasicData;
   onPreviewDataChange: (field: keyof CollaboratorBasicData, value: string) => void;
+  onRelationshipsChange: (relationships: PreviewRelationships) => void;
 }
 
 export const MergePreviewStep: React.FC<MergePreviewStepProps> = ({
@@ -19,7 +23,51 @@ export const MergePreviewStep: React.FC<MergePreviewStepProps> = ({
   previewRelationships,
   previewData,
   onPreviewDataChange,
+  onRelationshipsChange,
 }) => {
+  const [selectedManagers, setSelectedManagers] = useState<CollaboratorSelection[]>([]);
+  const [selectedMembers, setSelectedMembers] = useState<CollaboratorSelection[]>([]);
+  const [selectedEntities, setSelectedEntities] = useState<CollaboratorSelection[]>([]);
+
+  // Initialize relationship selections from previewRelationships only once
+  useEffect(() => {
+    if (previewRelationships) {
+      setSelectedManagers(previewRelationships.managers);
+      setSelectedMembers(previewRelationships.members);
+      setSelectedEntities(previewRelationships.publishing_entities);
+    }
+  }, [previewRelationships]);
+
+  // Create handlers that update both local state and parent
+  const handleManagersChange = (managers: CollaboratorSelection[]) => {
+    setSelectedManagers(managers);
+    const newRelationships: PreviewRelationships = {
+      managers: managers, 
+      members: selectedMembers,
+      publishing_entities: selectedEntities,
+    };
+    onRelationshipsChange(newRelationships);
+  };
+
+  const handleMembersChange = (members: CollaboratorSelection[]) => {
+    setSelectedMembers(members);
+    const newRelationships: PreviewRelationships = {
+      managers: selectedManagers,
+      members: members,
+      publishing_entities: selectedEntities,
+    };
+    onRelationshipsChange(newRelationships);
+  };
+
+  const handleEntitiesChange = (entities: CollaboratorSelection[]) => {
+    setSelectedEntities(entities);
+    const newRelationships: PreviewRelationships = {
+      managers: selectedManagers,
+      members: selectedMembers,
+      publishing_entities: entities,
+    };
+    onRelationshipsChange(newRelationships);
+  };
 
   const handleNonConflictingFieldChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -53,42 +101,40 @@ export const MergePreviewStep: React.FC<MergePreviewStepProps> = ({
 
         {/* Relationships Section */}
         <div className="pt-4 border-t">
-          <h4 className="text-small font-medium text-foreground-600 mb-3">Relationships</h4>
-          <div className="grid grid-cols-1 gap-3">
+          <h4 className="text-md font-medium text-foreground-600 mb-3">Relationships</h4>
+          
+          <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-foreground pb-1.5">
-                Managers
-              </label>
-              <div className="w-full min-h-10 px-3 py-2 border border-default-300 bg-default-100 rounded-medium text-small text-default-700">
-                {previewRelationships?.managers?.length ? 
-                  previewRelationships.managers.map(m => m.artist_name || m.legal_name).join(", ") :
-                  "(none)"
-                }
-              </div>
+              <CollaboratorMultiSelect
+                defaultSelected={selectedManagers}
+                setSelected={handleManagersChange}
+                title="Managers"
+              />
+              <p className="text-xs text-default-500 mt-1">
+                Select people/entities who manage this collaborator
+              </p>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-foreground pb-1.5">
-                Members
-              </label>
-              <div className="w-full min-h-10 px-3 py-2 border border-default-300 bg-default-100 rounded-medium text-small text-default-700">
-                {previewRelationships?.members?.length ? 
-                  previewRelationships.members.map(m => m.artist_name || m.legal_name).join(", ") :
-                  "(none)"
-                }
-              </div>
+              <CollaboratorMultiSelect
+                defaultSelected={selectedMembers}
+                setSelected={handleMembersChange}
+                title="Members"
+              />
+              <p className="text-xs text-default-500 mt-1">
+                Select people who this collaborator manages
+              </p>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-foreground pb-1.5">
-                Publishing Entities
-              </label>
-              <div className="w-full min-h-10 px-3 py-2 border border-default-300 bg-default-100 rounded-medium text-small text-default-700">
-                {previewRelationships?.publishing_entities?.length ? 
-                  previewRelationships.publishing_entities.map(e => e.artist_name || e.legal_name).join(", ") :
-                  "(none)"
-                }
-              </div>
+              <CollaboratorMultiSelect
+                defaultSelected={selectedEntities}
+                setSelected={handleEntitiesChange}
+                title="Publishing Entities"
+              />
+              <p className="text-xs text-default-500 mt-1">
+                Select publishing companies/entities associated with this collaborator
+              </p>
             </div>
           </div>
         </div>
