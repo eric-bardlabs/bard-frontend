@@ -34,6 +34,7 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { CollaboratorModal } from "@/components/collaborator/CollaboratorModal";
 import { MergeCollaboratorsModal } from "@/components/collaborator/MergeCollaboratorsModal";
+import { DeleteCollaboratorModal } from "@/components/collaborator/DeleteCollaboratorModal";
 import { useOrganization } from "@clerk/nextjs";
 import { ProfileCard } from "@/components/collaborator/profile-card";
 import clsx from "clsx";
@@ -71,6 +72,9 @@ const Collaborators = () => {
     undefined
   );
   const [mergingIndex, setMergingIndex] = useState<number | undefined>(
+    undefined
+  );
+  const [deletingIndex, setDeletingIndex] = useState<number | undefined>(
     undefined
   );
 
@@ -156,6 +160,13 @@ const Collaborators = () => {
     onOpen: onMergeModalOpen,
     onClose: onMergeModalClose,
     onOpenChange: onMergeModalOpenChange,
+  } = useDisclosure();
+  
+  const {
+    isOpen: isDeleteModalOpen,
+    onOpen: onDeleteModalOpen,
+    onClose: onDeleteModalClose,
+    onOpenChange: onDeleteModalOpenChange,
   } = useDisclosure();
 
   const pages = Math.ceil(totalCollaborators / 10);
@@ -267,7 +278,10 @@ const Collaborators = () => {
                       "text-danger",
                       isOrganizationAdmin ? "block" : "hidden"
                     )}
-                    onPress={() => deleteCollaborator.mutate(collaborator.id)}
+                    onPress={() => {
+                      setDeletingIndex(index);
+                      onDeleteModalOpen();
+                    }}
                     color="danger"
                   >
                     Delete
@@ -455,6 +469,21 @@ const Collaborators = () => {
             targetCollaborator={items[mergingIndex]}
           />
         )}
+        
+        <DeleteCollaboratorModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            onDeleteModalClose();
+            setDeletingIndex(undefined);
+          }}
+          collaborator={deletingIndex !== undefined ? items[deletingIndex] : undefined}
+          onConfirm={() => {
+            if (deletingIndex !== undefined) {
+              deleteCollaborator.mutate(items[deletingIndex].id);
+            }
+          }}
+          isDeleting={deleteCollaborator.isPending}
+        />
       </div>
     </div>
   );
