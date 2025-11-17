@@ -20,6 +20,7 @@ import {
   Spinner,
 } from "@heroui/react";
 import { CalendarDate } from "@internationalized/date";
+import { RangeValue } from "@react-types/shared";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
 import { Track } from "@/lib/api/tracks";
@@ -84,6 +85,12 @@ export const Financial = ({ song }: FinancialProps) => {
     enabled: !!song.id,
   });
 
+  const handleDateRangeChange = (value: RangeValue<CalendarDate> | null) => {
+    if (value?.start && value?.end) {
+      setDateRange({ start: value.start, end: value.end });
+    }
+  };
+
   const handleSearch = () => {
     refetch();
   };
@@ -131,7 +138,7 @@ export const Financial = ({ song }: FinancialProps) => {
               <DateRangePicker
                 label="Date Range"
                 value={dateRange}
-                onChange={setDateRange}
+                onChange={handleDateRangeChange}
                 variant="bordered"
                 granularity="day"
               />
@@ -144,7 +151,7 @@ export const Financial = ({ song }: FinancialProps) => {
               variant="bordered"
             >
               {dspOptions.map((option) => (
-                <SelectItem key={option.key} value={option.key}>
+                <SelectItem key={option.key}>
                   {option.label}
                 </SelectItem>
               ))}
@@ -157,7 +164,7 @@ export const Financial = ({ song }: FinancialProps) => {
               variant="bordered"
             >
               {typeOptions.map((option) => (
-                <SelectItem key={option.key} value={option.key}>
+                <SelectItem key={option.key}>
                   {option.label}
                 </SelectItem>
               ))}
@@ -170,7 +177,7 @@ export const Financial = ({ song }: FinancialProps) => {
               variant="bordered"
             >
               {sourceOptions.map((option) => (
-                <SelectItem key={option.key} value={option.key}>
+                <SelectItem key={option.key}>
                   {option.label}
                 </SelectItem>
               ))}
