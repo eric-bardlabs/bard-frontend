@@ -6,6 +6,7 @@ import { Overview } from "@/components/songs/overview";
 import { Composition } from "@/components/songs/composition";
 import { History } from "@/components/songs/history";
 import { Links } from "@/components/songs/links";
+import { Financial } from "@/components/songs/financial";
 import { useState } from "react";
 import { Track } from "@/lib/api/tracks";
 
@@ -93,6 +94,18 @@ const SongDetails = ({
           }
         >
           <Links song={song} />
+        </Tab>
+        <Tab
+          key="financial"
+          className="self-center"
+          textValue="Financial"
+          title={
+            <div className="flex items-center gap-1.5">
+              <p>Financial</p>
+            </div>
+          }
+        >
+          <Financial song={song} />
         </Tab>
       </Tabs>
     </div>
