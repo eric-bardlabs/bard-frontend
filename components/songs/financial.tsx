@@ -60,8 +60,8 @@ export const Financial = ({ song }: FinancialProps) => {
   const [selectedType, setSelectedType] = useState("");
   const [selectedSource, setSelectedSource] = useState("");
   const [dateRange, setDateRange] = useState({
-    start: new CalendarDate(2024, 1, 1),
-    end: new CalendarDate(2024, 12, 31),
+    start: new CalendarDate(2025, 1, 1),
+    end: new CalendarDate(2025, 12, 31),
   });
 
   // Fetch financial data
@@ -126,13 +126,16 @@ export const Financial = ({ song }: FinancialProps) => {
           <h3 className="text-lg font-semibold">Financial Information Search</h3>
         </CardHeader>
         <CardBody>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-4">
-            <DateRangePicker
-              label="Date Range"
-              value={dateRange}
-              onChange={setDateRange}
-              variant="bordered"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+            <div className="lg:col-span-2">
+              <DateRangePicker
+                label="Date Range"
+                value={dateRange}
+                onChange={setDateRange}
+                variant="bordered"
+                granularity="day"
+              />
+            </div>
             <Select
               label="DSP"
               placeholder="Select DSP"
