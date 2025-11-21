@@ -80,6 +80,7 @@ export const Financial = ({ song }: FinancialProps) => {
         dsp: selectedDsp || undefined,
         type: selectedType || undefined,
         source: selectedSource || undefined,
+        limit: 200,
       });
     },
     enabled: !!song.id,
