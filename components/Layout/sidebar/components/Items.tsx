@@ -13,6 +13,7 @@ import {
   Settings,
   Guitar,
   Sparkles,
+  DollarSign,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -36,6 +37,7 @@ export enum Pages {
   home = "Home",
   sessions = "Sessions",
   chat = "Melody",
+  financials = "Financials",
 }
 
 const SidebarLinkItem = ({
@@ -154,6 +156,16 @@ export const Items = ({ isOpen, toggleSidebar }: Props) => {
                       AI
                     </span>
                   }
+                />
+              </li>
+            )}
+            {anyOrganizationSelected && (
+              <li>
+                <SidebarLinkItem
+                  path="/financials"
+                  label={Pages.financials}
+                  Icon={DollarSign}
+                  toggleSidebar={toggleSidebar}
                 />
               </li>
             )}
