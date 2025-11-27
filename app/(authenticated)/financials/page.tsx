@@ -24,7 +24,7 @@ import {
 import { CalendarDate } from "@internationalized/date";
 import { RangeValue } from "@react-types/shared";
 import { useAuth } from "@clerk/nextjs";
-import { fetchFinancialData, fetchFinancialInsights, InsightsResponse } from "@/lib/api/financials";
+import { fetchFinancialData, fetchFinancialInsights, InsightsResponse, FinancialDataResponse, FinancialDataItem } from "@/lib/api/financials";
 import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 
 const sourceOptions = [
@@ -58,28 +58,6 @@ const viewByOptions = [
   { key: "target", label: "Reporting Month" },
   { key: "payout", label: "Payout Month" },
 ];
-
-interface FinancialRecord {
-  id: string;
-  isrc?: string;
-  source?: string;
-  dsp?: string;
-  type?: string;
-  amount?: number;
-  year: number;
-  month: number;
-  artist_share?: number;
-  distro_share?: number;
-  quantity?: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-interface FinancialDataResponse {
-  data: FinancialRecord[];
-  total_count: number;
-  total_amount: number;
-}
 
 type SortColumn = "period" | "isrc" | "source" | "dsp" | "type" | "quantity" | "amount" | "artist_share" | "distro_share";
 type SortDirection = "asc" | "desc";
@@ -208,7 +186,7 @@ export default function FinancialsPage() {
 
   const totalPages = data ? Math.ceil(data.total_count / limit) : 1;
 
-  const formatCurrency = (amount?: number) => {
+  const formatCurrency = (amount?: number | null) => {
     if (amount === undefined || amount === null) return "N/A";
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -216,12 +194,13 @@ export default function FinancialsPage() {
     }).format(amount);
   };
 
-  const formatPercentage = (value?: number) => {
+  const formatPercentage = (value?: number | null) => {
     if (value === undefined || value === null) return "N/A";
     return `${(value * 100).toFixed(2)}%`;
   };
 
-  const formatPeriod = (year: number, month: number) => {
+  const formatPeriod = (year: number | null, month: number | null) => {
+    if (year === null || month === null) return "N/A";
     const monthNames = [
       "January", "February", "March", "April", "May", "June",
       "July", "August", "September", "October", "November", "December"
