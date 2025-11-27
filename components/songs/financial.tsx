@@ -242,7 +242,7 @@ export const Financial = ({ song }: FinancialProps) => {
                 {data.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell>
-                      <div className="font-medium">{formatPeriod(item.year, item.month)}</div>
+                      <div className="font-medium">{formatPeriod(item.payout_year, item.payout_month)}</div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
