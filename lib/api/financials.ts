@@ -4,17 +4,21 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_BARD_BACKEND_API_BASE_URL || "http:
 
 export interface FinancialDataItem {
   id: string;
+  organization_id: string;
   isrc: string | null;
   source: string | null;
   dsp: string | null;
   type: string | null;
   amount: number | null;
-  year: number;
-  month: number;
+  payout_year: number;
+  payout_month: number;
+  target_year?: number | null;
+  target_month?: number | null;
   artist_share?: number | null;
   distro_share?: number | null;
   media_type?: string | null;
   quantity?: number | null;
+  region?: string | null;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -101,6 +105,7 @@ interface FetchAllFinancialDataParams {
   source?: string;
   dsp?: string;
   type?: string;
+  aggregatedBy?: "target" | "payout";
   offset?: number;
   limit?: number;
   onSuccess?: (data: FinancialDataResponse) => void;
@@ -116,6 +121,7 @@ export const fetchFinancialData = async ({
   source,
   dsp,
   type,
+  aggregatedBy = "target",
   offset = 0,
   limit = 50,
   onSuccess,
@@ -134,6 +140,7 @@ export const fetchFinancialData = async ({
     if (source) params.append("source", source);
     if (dsp) params.append("dsp", dsp);
     if (type) params.append("type", type);
+    if (aggregatedBy) params.append("aggregated_by", aggregatedBy);
 
     const response = await axios.get<FinancialDataResponse>(
       `${API_BASE_URL}/financials?${params}`,
@@ -153,6 +160,51 @@ export const fetchFinancialData = async ({
     if (onError) {
       onError(error);
     }
+    throw error;
+  }
+};
+
+export interface TopSongResponse {
+  isrc: string;
+  revenue: number;
+}
+
+export interface TopMonthResponse {
+  payout_year: number;
+  payout_month: number;
+  revenue: number;
+}
+
+export interface SourceRevenueResponse {
+  source: string;
+  revenue: number;
+}
+
+export interface SongSourceResponse {
+  isrc: string;
+  sources: SourceRevenueResponse[];
+  total_revenue: number;
+}
+
+export interface InsightsResponse {
+  top_songs: TopSongResponse[];
+  top_months: TopMonthResponse[];
+  songs_by_source: SongSourceResponse[];
+}
+
+export const fetchFinancialInsights = async (token: string): Promise<InsightsResponse> => {
+  try {
+    const response = await axios.get<InsightsResponse>(
+      `${API_BASE_URL}/financials/insights`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
     throw error;
   }
 };
