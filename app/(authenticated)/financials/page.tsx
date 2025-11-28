@@ -686,11 +686,11 @@ export default function FinancialsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 mb-4">
             <div className="lg:col-span-2">
               <DateRangePicker
-                label="Month Range"
+                label="Date Range"
                 value={dateRange}
                 onChange={handleDateRangeChange}
                 variant="bordered"
-                granularity="month"
+                granularity="day"
               />
             </div>
             <Select
