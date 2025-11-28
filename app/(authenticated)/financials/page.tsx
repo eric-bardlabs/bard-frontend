@@ -26,6 +26,7 @@ import { RangeValue } from "@react-types/shared";
 import { useAuth } from "@clerk/nextjs";
 import { fetchFinancialData, fetchFinancialInsights, InsightsResponse, FinancialDataResponse, FinancialDataItem } from "@/lib/api/financials";
 import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const sourceOptions = [
   { key: "", label: "All Sources" },
@@ -152,10 +153,17 @@ export default function FinancialsPage() {
 
   // Fetch insights data from backend
   const { data: insightsData, isLoading: insightsLoading } = useQuery<InsightsResponse>({
-    queryKey: ["financial-insights"],
+    queryKey: ["financial-insights", dateRange, viewBy],
     queryFn: async () => {
       const token = await getToken({ template: "bard-backend" });
-      return fetchFinancialInsights(token!);
+      return fetchFinancialInsights(
+        token!,
+        dateRange.start?.year,
+        dateRange.start?.month,
+        dateRange.end?.year,
+        dateRange.end?.month,
+        viewBy
+      );
     },
   });
 
@@ -242,114 +250,432 @@ export default function FinancialsPage() {
             </Card>
           ))}
         </div>
-      ) : insightsData && (insightsData.top_songs.length > 0 || insightsData.top_months.length > 0) ? (
+      ) : insightsData && (insightsData.top_songs.length > 0 || insightsData.top_months.length > 0 || insightsData.top_markets.length > 0) ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Top Songs by Revenue */}
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold">Top Songs by Revenue</h3>
+          {/* Top Performing Songs */}
+          <Card className="bg-gradient-to-br from-success-50 to-success-100 border-success-200">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-success-800">Top Performing Songs</h3>
+                  <p className="text-sm text-success-600">Revenue leaders in selected period</p>
+                </div>
+                <div className="bg-success-500 text-white rounded-full px-3 py-1 text-sm font-semibold">
+                  Top 5
+                </div>
+              </div>
             </CardHeader>
-            <CardBody>
-              <div className="space-y-3">
+            <CardBody className="pt-0">
+              <div className="space-y-4">
                 {insightsData.top_songs.map((song, index) => {
                   const maxRevenue = insightsData.top_songs[0]?.revenue || 1;
                   const percentage = (song.revenue / maxRevenue) * 100;
+                  const isTopPerformer = index === 0;
                   
                   return (
-                    <div key={song.isrc} className="space-y-1">
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="font-medium truncate">
-                          #{index + 1} {song.isrc}
-                        </span>
-                        <span className="text-success font-semibold">
-                          {formatCurrency(song.revenue)}
-                        </span>
+                    <div key={song.isrc} className={`p-3 rounded-lg border ${
+                      isTopPerformer 
+                        ? 'bg-white border-success-300 shadow-sm' 
+                        : 'bg-success-25 border-success-200'
+                    }`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                            isTopPerformer 
+                              ? 'bg-success-500 text-white' 
+                              : 'bg-success-200 text-success-700'
+                          }`}>
+                            #{index + 1}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold text-foreground text-sm truncate">
+                              {song.song_name || `ISRC: ${song.isrc}`}
+                            </div>
+                            {song.album_name && (
+                              <div className="text-xs text-default-500 truncate">
+                                Album: {song.album_name}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-success-700 text-lg">
+                            {formatCurrency(song.revenue)}
+                          </div>
+                          {song.spotify_url && (
+                            <a
+                              href={song.spotify_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 transition-colors"
+                            >
+                              <span>Listen</span>
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              </svg>
+                            </a>
+                          )}
+                        </div>
                       </div>
-                      <Progress
-                        value={percentage}
-                        className="h-2"
-                        color="success"
-                      />
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs text-default-600">
+                          <span>Performance vs #1</span>
+                          <span>{percentage.toFixed(1)}%</span>
+                        </div>
+                        <Progress
+                          value={percentage}
+                          className="h-2"
+                          color="success"
+                          classNames={{
+                            track: "bg-success-100",
+                            indicator: isTopPerformer ? "bg-success-500" : "bg-success-400"
+                          }}
+                        />
+                      </div>
                     </div>
                   );
                 })}
               </div>
+              {insightsData.top_songs.length === 0 && (
+                <div className="text-center py-8 text-default-500">
+                  <div className="text-lg mb-2">📊</div>
+                  <p>No revenue data available for the selected period</p>
+                </div>
+              )}
             </CardBody>
           </Card>
 
-          {/* Top Months by Revenue */}
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold">Top Months by Revenue</h3>
+          {/* Revenue Trends */}
+          <Card className="bg-gradient-to-br from-primary-50 to-primary-100 border-primary-200">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-primary-800">Revenue Trends</h3>
+                  <p className="text-sm text-primary-600">Highest earning months (by target date)</p>
+                </div>
+                <div className="bg-primary-500 text-white rounded-full px-3 py-1 text-sm font-semibold">
+                  Monthly
+                </div>
+              </div>
             </CardHeader>
-            <CardBody>
+            <CardBody className="pt-0">
               <div className="space-y-3">
                 {insightsData.top_months.map((month, index) => {
                   const maxRevenue = insightsData.top_months[0]?.revenue || 1;
                   const percentage = (month.revenue / maxRevenue) * 100;
+                  const isPeakMonth = index === 0;
                   
                   return (
-                    <div key={`${month.payout_year}-${month.payout_month}`} className="space-y-1">
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="font-medium">
-                          #{index + 1} {formatPeriod(month.payout_year, month.payout_month)}
-                        </span>
-                        <span className="text-success font-semibold">
+                    <div key={`${month.payout_year}-${month.payout_month}`} className={`p-3 rounded-lg border ${
+                      isPeakMonth 
+                        ? 'bg-white border-primary-300 shadow-sm' 
+                        : 'bg-primary-25 border-primary-200'
+                    }`}>
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                            isPeakMonth 
+                              ? 'bg-primary-500 text-white' 
+                              : 'bg-primary-200 text-primary-700'
+                          }`}>
+                            #{index + 1}
+                          </div>
+                          <div className="font-semibold text-foreground">
+                            {formatPeriod(month.payout_year, month.payout_month)}
+                          </div>
+                        </div>
+                        <div className="font-bold text-primary-700 text-lg">
                           {formatCurrency(month.revenue)}
-                        </span>
+                        </div>
                       </div>
-                      <Progress
-                        value={percentage}
-                        className="h-2"
-                        color="primary"
-                      />
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs text-default-600">
+                          <span>Performance vs peak</span>
+                          <span>{percentage.toFixed(1)}%</span>
+                        </div>
+                        <Progress
+                          value={percentage}
+                          className="h-2"
+                          color="primary"
+                          classNames={{
+                            track: "bg-primary-100",
+                            indicator: isPeakMonth ? "bg-primary-500" : "bg-primary-400"
+                          }}
+                        />
+                        
+                        {/* Top 5 songs for this month */}
+                        {month.top_songs && month.top_songs.length > 0 && (
+                          <div className="mt-3 pt-2 border-t border-primary-200">
+                            <div className="text-xs font-medium text-primary-700 mb-2">
+                              Top songs this month:
+                            </div>
+                            <div className="space-y-1">
+                              {month.top_songs.map((song, songIndex) => (
+                                <div key={song.isrc} className="flex items-center justify-between text-xs">
+                                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                                    <span className="text-primary-600 font-medium">
+                                      {songIndex + 1}.
+                                    </span>
+                                    <span className="truncate text-default-700">
+                                      {song.song_name || song.isrc}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 ml-2">
+                                    <span className="text-primary-700 font-medium">
+                                      {formatCurrency(song.revenue)}
+                                    </span>
+                                    {song.spotify_url && (
+                                      <a
+                                        href={song.spotify_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-primary-600 hover:text-primary-700"
+                                      >
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
               </div>
+              {insightsData.top_months.length === 0 && (
+                <div className="text-center py-8 text-default-500">
+                  <div className="text-lg mb-2">📈</div>
+                  <p>No monthly data available</p>
+                </div>
+              )}
             </CardBody>
           </Card>
 
-          {/* Revenue by Source for Top Songs */}
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-semibold">Revenue by Source (Top 3 Songs)</h3>
-            </CardHeader>
-            <CardBody>
-              <div className="space-y-4">
-                {insightsData.songs_by_source.map((song, songIndex) => (
-                  <div key={song.isrc} className="space-y-2">
-                    <div className="text-sm font-medium text-default-700 truncate">
-                      #{songIndex + 1} {song.isrc}
-                    </div>
-                    <div className="space-y-1">
-                      {song.sources.slice(0, 3).map((source) => {
-                        const percentage = (source.revenue / song.total_revenue) * 100;
-                        
-                        return (
-                          <div key={source.source} className="space-y-1">
-                            <div className="flex justify-between items-center text-xs">
-                              <span className="capitalize">{source.source}</span>
-                              <span className="text-success">
-                                {formatCurrency(source.revenue)}
-                              </span>
-                            </div>
-                            <Progress
-                              value={percentage}
-                              className="h-1"
-                              color="secondary"
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+          {/* Top Markets */}
+          <Card className="bg-gradient-to-br from-warning-50 to-warning-100 border-warning-200">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-warning-800">Top Markets</h3>
+                  <p className="text-sm text-warning-600">Geographic revenue distribution</p>
+                </div>
+                <div className="bg-warning-500 text-white rounded-full px-3 py-1 text-sm font-semibold">
+                  Global
+                </div>
               </div>
+            </CardHeader>
+            <CardBody className="pt-0">
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {insightsData.top_markets.map((market, index) => {
+                  const isTopMarket = index === 0;
+                  const isTop5 = index < 5;
+                  
+                  return (
+                    <div key={market.region} className={`p-3 rounded-lg border ${
+                      isTopMarket 
+                        ? 'bg-white border-warning-300 shadow-sm' 
+                        : isTop5
+                        ? 'bg-warning-25 border-warning-200'
+                        : 'bg-warning-10 border-warning-150'
+                    }`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className={`flex items-center justify-center w-7 h-7 rounded-full font-bold text-xs ${
+                            isTopMarket 
+                              ? 'bg-warning-500 text-white' 
+                              : isTop5
+                              ? 'bg-warning-300 text-warning-800'
+                              : 'bg-warning-200 text-warning-700'
+                          }`}>
+                            #{index + 1}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="text-2xl">
+                              {market.region === 'US' ? '🇺🇸' : 
+                               market.region === 'GB' ? '🇬🇧' : 
+                               market.region === 'CA' ? '🇨🇦' : 
+                               market.region === 'DE' ? '🇩🇪' : 
+                               market.region === 'AU' ? '🇦🇺' : 
+                               market.region === 'FR' ? '🇫🇷' : 
+                               market.region === 'JP' ? '🇯🇵' : 
+                               market.region === 'BR' ? '🇧🇷' : 
+                               market.region === 'MX' ? '🇲🇽' : 
+                               market.region === 'ES' ? '🇪🇸' : 
+                               market.region === 'IT' ? '🇮🇹' : 
+                               market.region === 'NL' ? '🇳🇱' : 
+                               market.region === 'SE' ? '🇸🇪' : 
+                               market.region === 'NO' ? '🇳🇴' : 
+                               market.region === 'DK' ? '🇩🇰' : 
+                               market.region === 'FI' ? '🇫🇮' : 
+                               market.region === 'BE' ? '🇧🇪' : 
+                               market.region === 'CH' ? '🇨🇭' : 
+                               market.region === 'AT' ? '🇦🇹' : 
+                               market.region === 'IE' ? '🇮🇪' : 
+                               '🌍'}
+                            </div>
+                            <div className="font-semibold text-foreground">
+                              {market.region}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-warning-700 text-sm">
+                            {formatCurrency(market.revenue)}
+                          </div>
+                          <div className="text-xs text-warning-600 font-medium">
+                            {market.percentage.toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Progress
+                          value={market.percentage}
+                          className="h-1.5"
+                          color="warning"
+                          classNames={{
+                            track: "bg-warning-100",
+                            indicator: isTopMarket 
+                              ? "bg-warning-500" 
+                              : isTop5 
+                              ? "bg-warning-400" 
+                              : "bg-warning-300"
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {insightsData.top_markets.length === 0 && (
+                <div className="text-center py-8 text-default-500">
+                  <div className="text-lg mb-2">🌍</div>
+                  <p>No regional data available</p>
+                </div>
+              )}
             </CardBody>
           </Card>
         </div>
       ) : null}
+
+      {/* Monthly Revenue Chart */}
+      {insightsData && insightsData.monthly_chart && insightsData.monthly_chart.length > 0 && (
+        <Card className="bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">Revenue Timeline</h3>
+                <p className="text-sm text-slate-600">Monthly revenue trends in selected period</p>
+              </div>
+              <div className="bg-slate-500 text-white rounded-full px-3 py-1 text-sm font-semibold">
+                {insightsData.monthly_chart.length} months
+              </div>
+            </div>
+          </CardHeader>
+          <CardBody className="pt-0">
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={insightsData.monthly_chart.map((item) => ({
+                    month: `${new Date(item.year, item.month - 1).toLocaleDateString('en-US', { month: 'short' })} ${item.year}`,
+                    revenue: item.revenue,
+                    fullDate: `${item.year}-${item.month.toString().padStart(2, '0')}`
+                  }))}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 20,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis 
+                    dataKey="month" 
+                    stroke="#64748b"
+                    fontSize={12}
+                    tick={{ fill: '#64748b' }}
+                    tickLine={{ stroke: '#64748b' }}
+                  />
+                  <YAxis 
+                    stroke="#64748b"
+                    fontSize={12}
+                    tick={{ fill: '#64748b' }}
+                    tickLine={{ stroke: '#64748b' }}
+                    tickFormatter={(value) => {
+                      if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+                      if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
+                      return `$${value.toFixed(0)}`;
+                    }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    }}
+                    formatter={(value: number) => [formatCurrency(value), 'Revenue']}
+                    labelStyle={{ color: '#334155', fontWeight: 600 }}
+                    itemStyle={{ color: '#0f172a' }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="#3b82f6" 
+                    strokeWidth={3}
+                    dot={{ fill: '#3b82f6', strokeWidth: 2, r: 6 }}
+                    activeDot={{ r: 8, fill: '#1d4ed8' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            
+            {/* Summary Statistics */}
+            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-slate-200">
+              {(() => {
+                const revenues = insightsData.monthly_chart.map(m => m.revenue);
+                const totalRevenue = revenues.reduce((sum, rev) => sum + rev, 0);
+                const avgRevenue = totalRevenue / revenues.length;
+                const maxRevenue = Math.max(...revenues);
+                const minRevenue = Math.min(...revenues);
+                
+                return (
+                  <>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-slate-700">
+                        {formatCurrency(totalRevenue)}
+                      </div>
+                      <div className="text-xs text-slate-500 font-medium">Total Revenue</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-slate-700">
+                        {formatCurrency(avgRevenue)}
+                      </div>
+                      <div className="text-xs text-slate-500 font-medium">Average/Month</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-green-600">
+                        {formatCurrency(maxRevenue)}
+                      </div>
+                      <div className="text-xs text-slate-500 font-medium">Best Month</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-red-500">
+                        {formatCurrency(minRevenue)}
+                      </div>
+                      <div className="text-xs text-slate-500 font-medium">Lowest Month</div>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Search Filters */}
       <Card>
@@ -360,11 +686,11 @@ export default function FinancialsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 mb-4">
             <div className="lg:col-span-2">
               <DateRangePicker
-                label="Date Range"
+                label="Month Range"
                 value={dateRange}
                 onChange={handleDateRangeChange}
                 variant="bordered"
-                granularity="day"
+                granularity="month"
               />
             </div>
             <Select

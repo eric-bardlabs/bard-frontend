@@ -167,12 +167,23 @@ export const fetchFinancialData = async ({
 export interface TopSongResponse {
   isrc: string;
   revenue: number;
+  song_name?: string;
+  artist_name?: string;
+  album_name?: string;
+  spotify_url?: string;
 }
 
 export interface TopMonthResponse {
   payout_year: number;
   payout_month: number;
   revenue: number;
+  top_songs: TopSongResponse[];
+}
+
+export interface TopMarketResponse {
+  region: string;
+  revenue: number;
+  percentage: number;
 }
 
 export interface SourceRevenueResponse {
@@ -186,16 +197,38 @@ export interface SongSourceResponse {
   total_revenue: number;
 }
 
+export interface MonthlyRevenueResponse {
+  year: number;
+  month: number;
+  revenue: number;
+}
+
 export interface InsightsResponse {
   top_songs: TopSongResponse[];
   top_months: TopMonthResponse[];
-  songs_by_source: SongSourceResponse[];
+  top_markets: TopMarketResponse[];
+  monthly_chart: MonthlyRevenueResponse[];
 }
 
-export const fetchFinancialInsights = async (token: string): Promise<InsightsResponse> => {
+export const fetchFinancialInsights = async (
+  token: string,
+  startYear?: number,
+  startMonth?: number,
+  endYear?: number,
+  endMonth?: number,
+  aggregatedBy?: "target" | "payout"
+): Promise<InsightsResponse> => {
   try {
+    const params = new URLSearchParams();
+    
+    if (startYear !== undefined) params.append("start_year", startYear.toString());
+    if (startMonth !== undefined) params.append("start_month", startMonth.toString());
+    if (endYear !== undefined) params.append("end_year", endYear.toString());
+    if (endMonth !== undefined) params.append("end_month", endMonth.toString());
+    if (aggregatedBy) params.append("aggregated_by", aggregatedBy);
+
     const response = await axios.get<InsightsResponse>(
-      `${API_BASE_URL}/financials/insights`,
+      `${API_BASE_URL}/financials/insights?${params}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
