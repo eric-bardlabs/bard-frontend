@@ -180,10 +180,12 @@ export interface TopMonthResponse {
   top_songs: TopSongResponse[];
 }
 
-export interface TopMarketResponse {
-  region: string;
+export interface DspRevenueResponse {
+  dsp: string;
   revenue: number;
   percentage: number;
+  total_streams: number;
+  earnings_per_stream: number;
 }
 
 export interface SourceRevenueResponse {
@@ -206,7 +208,7 @@ export interface MonthlyRevenueResponse {
 export interface InsightsResponse {
   top_songs: TopSongResponse[];
   top_months: TopMonthResponse[];
-  top_markets: TopMarketResponse[];
+  dsp_distribution: DspRevenueResponse[];
   monthly_chart: MonthlyRevenueResponse[];
 }
 

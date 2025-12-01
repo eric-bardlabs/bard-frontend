@@ -26,7 +26,7 @@ import { RangeValue } from "@react-types/shared";
 import { useAuth } from "@clerk/nextjs";
 import { fetchFinancialData, fetchFinancialInsights, InsightsResponse, FinancialDataResponse, FinancialDataItem } from "@/lib/api/financials";
 import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 const sourceOptions = [
   { key: "", label: "All Sources" },
@@ -250,7 +250,7 @@ export default function FinancialsPage() {
             </Card>
           ))}
         </div>
-      ) : insightsData && (insightsData.top_songs.length > 0 || insightsData.top_months.length > 0 || insightsData.top_markets.length > 0) ? (
+      ) : insightsData && (insightsData.top_songs.length > 0 || insightsData.top_months.length > 0 || insightsData.dsp_distribution.length > 0) ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Top Performing Songs */}
           <Card className="bg-gradient-to-br from-success-50 to-success-100 border-success-200">
@@ -456,105 +456,94 @@ export default function FinancialsPage() {
             </CardBody>
           </Card>
 
-          {/* Top Markets */}
-          <Card className="bg-gradient-to-br from-warning-50 to-warning-100 border-warning-200">
+          {/* DSP Performance */}
+          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-warning-800">Top Markets</h3>
-                  <p className="text-sm text-warning-600">Geographic revenue distribution</p>
+                  <h3 className="text-lg font-bold text-purple-800">DSP Performance</h3>
+                  <p className="text-sm text-purple-600">Platform revenue breakdown with earnings per stream</p>
                 </div>
-                <div className="bg-warning-500 text-white rounded-full px-3 py-1 text-sm font-semibold">
-                  Global
+                <div className="bg-purple-500 text-white rounded-full px-3 py-1 text-sm font-semibold">
+                  By Revenue
                 </div>
               </div>
             </CardHeader>
             <CardBody className="pt-0">
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {insightsData.top_markets.map((market, index) => {
-                  const isTopMarket = index === 0;
-                  const isTop5 = index < 5;
-                  
-                  return (
-                    <div key={market.region} className={`p-3 rounded-lg border ${
-                      isTopMarket 
-                        ? 'bg-white border-warning-300 shadow-sm' 
-                        : isTop5
-                        ? 'bg-warning-25 border-warning-200'
-                        : 'bg-warning-10 border-warning-150'
-                    }`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <div className={`flex items-center justify-center w-7 h-7 rounded-full font-bold text-xs ${
-                            isTopMarket 
-                              ? 'bg-warning-500 text-white' 
-                              : isTop5
-                              ? 'bg-warning-300 text-warning-800'
-                              : 'bg-warning-200 text-warning-700'
-                          }`}>
-                            #{index + 1}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="text-2xl">
-                              {market.region === 'US' ? '🇺🇸' : 
-                               market.region === 'GB' ? '🇬🇧' : 
-                               market.region === 'CA' ? '🇨🇦' : 
-                               market.region === 'DE' ? '🇩🇪' : 
-                               market.region === 'AU' ? '🇦🇺' : 
-                               market.region === 'FR' ? '🇫🇷' : 
-                               market.region === 'JP' ? '🇯🇵' : 
-                               market.region === 'BR' ? '🇧🇷' : 
-                               market.region === 'MX' ? '🇲🇽' : 
-                               market.region === 'ES' ? '🇪🇸' : 
-                               market.region === 'IT' ? '🇮🇹' : 
-                               market.region === 'NL' ? '🇳🇱' : 
-                               market.region === 'SE' ? '🇸🇪' : 
-                               market.region === 'NO' ? '🇳🇴' : 
-                               market.region === 'DK' ? '🇩🇰' : 
-                               market.region === 'FI' ? '🇫🇮' : 
-                               market.region === 'BE' ? '🇧🇪' : 
-                               market.region === 'CH' ? '🇨🇭' : 
-                               market.region === 'AT' ? '🇦🇹' : 
-                               market.region === 'IE' ? '🇮🇪' : 
-                               '🌍'}
+              <div className="space-y-3">
+                {insightsData.dsp_distribution
+                  .sort((a, b) => b.percentage - a.percentage)
+                  .map((dsp, index) => {
+                    const isTopDSP = index === 0;
+                    const isTop3 = index < 3;
+                    
+                    return (
+                      <div key={dsp.dsp} className={`p-4 rounded-lg border ${
+                        isTopDSP 
+                          ? 'bg-white border-purple-300 shadow-sm' 
+                          : isTop3
+                          ? 'bg-purple-25 border-purple-200'
+                          : 'bg-purple-10 border-purple-150'
+                      }`}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                              isTopDSP 
+                                ? 'bg-purple-500 text-white' 
+                                : isTop3
+                                ? 'bg-purple-300 text-purple-800'
+                                : 'bg-purple-200 text-purple-700'
+                            }`}>
+                              #{index + 1}
                             </div>
-                            <div className="font-semibold text-foreground">
-                              {market.region}
+                            <div>
+                              <div className="font-semibold text-foreground text-lg capitalize">
+                                {dsp.dsp}
+                              </div>
+                              <div className="text-sm text-purple-600">
+                                {dsp.total_streams.toLocaleString()} streams
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-purple-700 text-xl">
+                              {formatCurrency(dsp.revenue)}
+                            </div>
+                            <div className="text-sm text-purple-600 font-medium">
+                              {dsp.percentage.toFixed(1)}% of total
                             </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="font-bold text-warning-700 text-sm">
-                            {formatCurrency(market.revenue)}
-                          </div>
-                          <div className="text-xs text-warning-600 font-medium">
-                            {market.percentage.toFixed(1)}%
-                          </div>
+                        
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-600">Revenue Share</span>
+                          <span className="text-sm font-semibold text-purple-700">
+                            ${(dsp.earnings_per_stream * 1000).toFixed(3)} per 1,000 streams
+                          </span>
                         </div>
-                      </div>
-                      <div className="space-y-1">
+                        
                         <Progress
-                          value={market.percentage}
-                          className="h-1.5"
-                          color="warning"
+                          value={dsp.percentage}
+                          className="h-2"
+                          color="secondary"
                           classNames={{
-                            track: "bg-warning-100",
-                            indicator: isTopMarket 
-                              ? "bg-warning-500" 
-                              : isTop5 
-                              ? "bg-warning-400" 
-                              : "bg-warning-300"
+                            track: "bg-purple-100",
+                            indicator: isTopDSP 
+                              ? "bg-purple-500" 
+                              : isTop3 
+                              ? "bg-purple-400" 
+                              : "bg-purple-300"
                           }}
                         />
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
-              {insightsData.top_markets.length === 0 && (
+              
+              {insightsData.dsp_distribution.length === 0 && (
                 <div className="text-center py-8 text-default-500">
-                  <div className="text-lg mb-2">🌍</div>
-                  <p>No regional data available</p>
+                  <div className="text-lg mb-2">📱</div>
+                  <p>No DSP data available for selected period</p>
                 </div>
               )}
             </CardBody>
