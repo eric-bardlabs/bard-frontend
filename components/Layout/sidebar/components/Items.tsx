@@ -80,10 +80,21 @@ export const Items = ({ isOpen, toggleSidebar }: Props) => {
   const anyOrganizationSelected = Boolean(organization);
 
   return (
-    <div
-      className={`${isOpen ? "h-auto" : "h-0"} md:block fixed w-full mt-[72px] md:max-w-[240px] md:h-full bg-dark overflow-y-hidden z-50 transition-height duration-500 ease-in-out md:transition-none`}
-    >
-      <ul className="flex flex-col md:h-[calc(100%-72px)] gap-[16px] p-[16px] text-grayLight md:gap-2 bg-slate-950">
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={toggleSidebar}
+        />
+      )}
+      
+      <div
+        className={`${
+          isOpen ? "h-auto" : "h-0"
+        } md:block fixed w-full mt-[72px] md:max-w-[240px] md:h-full bg-dark overflow-y-hidden z-50 transition-all duration-300 ease-in-out md:transition-none`}
+      >
+        <ul className="flex flex-col md:h-[calc(100%-72px)] gap-[16px] p-[16px] text-grayLight md:gap-2 bg-slate-950">
         <OrganizationSwitcher
           hidePersonal={false}
           afterSelectOrganizationUrl={pathname ?? process.env.HOST}
@@ -213,5 +224,6 @@ export const Items = ({ isOpen, toggleSidebar }: Props) => {
         </div>
       </ul>
     </div>
+    </>
   );
 };

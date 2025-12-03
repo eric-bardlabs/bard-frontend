@@ -19,7 +19,7 @@ export const Sidebar = () => {
         "flex flex-1 md:flex-none flex-col w-full md:max-w-[240px] h-full top-0 bg-slate-950 transition-all"
       )}
     >
-      <Header />
+      <Header toggleSidebar={toggleSidebar} />
       <Items isOpen={open} toggleSidebar={toggleSidebar} />
     </div>
   );
