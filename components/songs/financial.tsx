@@ -61,7 +61,7 @@ export const Financial = ({ song }: FinancialProps) => {
   const [selectedType, setSelectedType] = useState("");
   const [selectedSource, setSelectedSource] = useState("");
   const [dateRange, setDateRange] = useState({
-    start: new CalendarDate(2025, 1, 1),
+    start: new CalendarDate(2023, 1, 1),
     end: new CalendarDate(2025, 12, 31),
   });
 

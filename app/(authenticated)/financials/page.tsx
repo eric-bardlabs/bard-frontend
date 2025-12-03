@@ -67,7 +67,7 @@ export default function FinancialsPage() {
   const { getToken } = useAuth();
   const [page, setPage] = useState(1);
   const [dateRange, setDateRange] = useState({
-    start: new CalendarDate(2024, 1, 1),
+    start: new CalendarDate(2023, 1, 1),
     end: new CalendarDate(2025, 12, 31),
   });
   const [source, setSource] = useState<string>("");
