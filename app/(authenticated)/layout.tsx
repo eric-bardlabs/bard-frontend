@@ -23,7 +23,10 @@ export default function RootLayout({
     }
   }, [user, router]);
 
-  if (isLoading) {
+  // Only show loading spinner on initial load, not on refetches
+  const showLoadingSpinner = isLoading && !user;
+
+  if (showLoadingSpinner) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
         <Spinner size="lg" />

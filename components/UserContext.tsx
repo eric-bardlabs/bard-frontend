@@ -17,9 +17,9 @@ const UserContext = createContext<UserContextType>({
 export const useUserContext = () => useContext(UserContext);
 
 export const UserProvider = ({ children }: PropsWithChildren) => {
-  const { getToken } = useAuth();
+  const { getToken, isSignedIn, isLoaded } = useAuth();
   
-  const { data, isLoading, refetch } = useQuery<UserResponse | null>({
+  const { data, isLoading, refetch, error } = useQuery<UserResponse | null>({
     queryFn: async () => {
       const token = await getToken({ template: "bard-backend" });
       if (!token) {
@@ -29,14 +29,24 @@ export const UserProvider = ({ children }: PropsWithChildren) => {
     },
     queryKey: ["user"],
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: isLoaded && isSignedIn, // Only fetch when Clerk is ready and user is signed in
+    retry: 2,
+    retryDelay: 1000,
   });
 
   const handleRefetch = () => {
     refetch();
   };
 
+  // Don't show loading if we have an error and no data
+  const shouldShowLoading = isLoading && !error;
+
   return (
-    <UserContext.Provider value={{ user: data || undefined, isLoading, refetch: handleRefetch }}>
+    <UserContext.Provider value={{ 
+      user: data || undefined, 
+      isLoading: shouldShowLoading, 
+      refetch: handleRefetch 
+    }}>
       {children}
     </UserContext.Provider>
   );
