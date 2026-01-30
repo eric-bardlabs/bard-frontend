@@ -188,6 +188,21 @@ export interface DspRevenueResponse {
   earnings_per_stream: number;
 }
 
+export interface UpcPerformanceResponse {
+  upc: string;
+  total_streams: number;
+  total_revenue: number;
+  album_name: string | null;
+}
+
+export interface TerritoryPerformanceResponse {
+  region: string;
+  total_streams: number;
+  total_revenue: number;
+  percentage_of_streams: number;
+  percentage_of_revenue: number;
+}
+
 export interface SourceRevenueResponse {
   source: string;
   revenue: number;
@@ -210,6 +225,83 @@ export interface InsightsResponse {
   top_months: TopMonthResponse[];
   dsp_distribution: DspRevenueResponse[];
   monthly_chart: MonthlyRevenueResponse[];
+  upc_performance: UpcPerformanceResponse[];
+  territory_performance: TerritoryPerformanceResponse[];
+}
+
+export interface AlbumMonthlyData {
+  year: number;
+  month: number;
+  period: string; // "Jan 2024" format
+  expenses: number;
+  income: number;
+  streaming_revenue: number;
+  total_streams: number; // Monthly stream count
+}
+
+export interface MonthlySpendingBreakdown {
+  year: number;
+  month: number;
+  period: string; // "Jan 2024" format
+  marketing_ads_spending: number;
+  other_spending: number;
+  total_spending: number;
+}
+
+export interface MonthlyAdvances {
+  year: number;
+  month: number;
+  period: string; // "Jan 2024" format
+  advances_amount: number;
+}
+
+export interface AlbumFinancialSummary {
+  total_spending: number;
+  total_advances: number;
+  marketing_ads_spending: number;
+  other_spending: number;
+  total_streaming_revenue: number;
+  monthly_spending_breakdown: MonthlySpendingBreakdown[];
+  monthly_advances: MonthlyAdvances[];
+}
+
+export interface RegionMonthlyBreakdown {
+  year: number;
+  month: number;
+  period: string; // "Jan 2024" format
+  streams: number;
+  revenue: number;
+}
+
+export interface TopRegion {
+  region: string;
+  total_streams: number;
+  total_revenue: number;
+  monthly_data: RegionMonthlyBreakdown[];
+}
+
+export interface DspMonthlyBreakdown {
+  year: number;
+  month: number;
+  period: string; // "Jan 2024" format
+  streams: number;
+  revenue: number;
+}
+
+export interface TopDsp {
+  dsp: string;
+  total_streams: number;
+  total_revenue: number;
+  monthly_data: DspMonthlyBreakdown[];
+}
+
+export interface AlbumFinancialResponse {
+  upc: string;
+  album_name?: string;
+  monthly_data: AlbumMonthlyData[];
+  summary: AlbumFinancialSummary;
+  top_regions: TopRegion[];
+  top_dsps: TopDsp[];
 }
 
 export const fetchFinancialInsights = async (
@@ -244,5 +336,45 @@ export const fetchFinancialInsights = async (
   }
 };
 
+interface FetchAlbumFinancialDataParams {
+  token: string;
+  upc: string;
+  startYear?: number;
+  startMonth?: number;
+  endYear?: number;
+  endMonth?: number;
+}
+
+export const fetchAlbumFinancialData = async ({
+  token,
+  upc,
+  startYear,
+  startMonth,
+  endYear,
+  endMonth,
+}: FetchAlbumFinancialDataParams): Promise<AlbumFinancialResponse> => {
+  try {
+    const params = new URLSearchParams();
+    
+    if (startYear !== undefined) params.append("start_year", startYear.toString());
+    if (startMonth !== undefined) params.append("start_month", startMonth.toString());
+    if (endYear !== undefined) params.append("end_year", endYear.toString());
+    if (endMonth !== undefined) params.append("end_month", endMonth.toString());
+
+    const queryString = params.toString();
+    const url = `${API_BASE_URL}/albums/${upc}/financials${queryString ? `?${queryString}` : ''}`;
+
+    const response = await axios.get<AlbumFinancialResponse>(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Export types for use in components
-export type { FetchFinancialDataParams, FetchAllFinancialDataParams };
+export type { FetchFinancialDataParams, FetchAllFinancialDataParams, FetchAlbumFinancialDataParams };

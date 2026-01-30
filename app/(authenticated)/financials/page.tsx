@@ -76,6 +76,7 @@ export default function FinancialsPage() {
   const [viewBy, setViewBy] = useState<"target" | "payout">("target");
   const [sortColumn, setSortColumn] = useState<SortColumn>("period");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [selectedUpc, setSelectedUpc] = useState<string>("");
 
   const limit = 50;
   const offset = (page - 1) * limit;
@@ -550,6 +551,261 @@ export default function FinancialsPage() {
           </Card>
         </div>
       ) : null}
+
+      {/* Additional Insights - UPC Performance and Territory */}
+      {insightsData && (insightsData.upc_performance.length > 0 || insightsData.territory_performance.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* UPC Performance */}
+          {insightsData.upc_performance.length > 0 && (
+            <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold text-amber-800">UPC Streaming Performance</h3>
+                    <p className="text-sm text-amber-600">Stream counts by album UPC</p>
+                  </div>
+                  <div className="bg-amber-500 text-white rounded-full px-3 py-1 text-sm font-semibold">
+                    {insightsData.upc_performance.length} albums
+                  </div>
+                </div>
+              </CardHeader>
+              <CardBody className="pt-0">
+                <div className="space-y-4">
+                  <Select
+                    placeholder="Select an album to view performance"
+                    className="max-w-full"
+                    size="sm"
+                    variant="bordered"
+                    selectedKeys={selectedUpc ? [selectedUpc] : []}
+                    onSelectionChange={(keys) => {
+                      const selectedKey = Array.from(keys)[0] as string;
+                      setSelectedUpc(selectedKey || "");
+                    }}
+                  >
+                    {insightsData.upc_performance.map((upc) => (
+                      <SelectItem 
+                        key={upc.upc} 
+                        value={upc.upc}
+                        textValue={upc.album_name || upc.upc}
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">{upc.album_name || "Unknown Album"}</span>
+                          <span className="text-xs text-default-500">UPC: {upc.upc}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </Select>
+                  
+                  {/* Selected UPC Details */}
+                  {selectedUpc && (() => {
+                    const selectedUpcData = insightsData.upc_performance.find(upc => upc.upc === selectedUpc);
+                    if (!selectedUpcData) return null;
+                    
+                    return (
+                      <div className="mb-4">
+                        <h4 className="text-sm font-semibold text-amber-800 mb-2">Selected Album Performance</h4>
+                        <div className="bg-amber-50 rounded-lg p-4 border-2 border-amber-300">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center text-sm font-bold">
+                                ★
+                              </div>
+                              <div>
+                                <div className="font-semibold text-foreground text-lg">
+                                  {selectedUpcData.album_name || "Unknown Album"}
+                                </div>
+                                <div className="text-sm text-amber-600">
+                                  UPC: {selectedUpcData.upc}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-amber-700 text-2xl">
+                                {selectedUpcData.total_streams.toLocaleString()}
+                              </div>
+                              <div className="text-sm text-amber-600">total streams</div>
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-white rounded-lg p-3 border border-amber-200">
+                              <div className="text-xs font-medium text-gray-600 mb-1">Total Revenue</div>
+                              <div className="font-bold text-amber-700 text-xl">
+                                {formatCurrency(selectedUpcData.total_revenue)}
+                              </div>
+                            </div>
+                            <div className="bg-white rounded-lg p-3 border border-amber-200">
+                              <div className="text-xs font-medium text-gray-600 mb-1">Revenue per Stream</div>
+                              <div className="font-bold text-amber-700 text-xl">
+                                {selectedUpcData.total_streams > 0 
+                                  ? formatCurrency(selectedUpcData.total_revenue / selectedUpcData.total_streams)
+                                  : "$0.00"
+                                }
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  
+                  {/* Show first 3 UPCs by default */}
+                  <div className="space-y-3">
+                    {insightsData.upc_performance.slice(0, 3).map((upc, index) => {
+                      const maxStreams = insightsData.upc_performance[0]?.total_streams || 1;
+                      const percentage = (upc.total_streams / maxStreams) * 100;
+                      const isTopPerformer = index === 0;
+                      
+                      return (
+                        <div key={upc.upc} className="bg-white rounded-lg p-4 shadow-sm border border-amber-200">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                isTopPerformer ? "bg-amber-500 text-white" : "bg-amber-100 text-amber-700"
+                              }`}>
+                                #{index + 1}
+                              </div>
+                              <div>
+                                <div className="font-semibold text-foreground text-sm">
+                                  {upc.album_name || "Unknown Album"}
+                                </div>
+                                <div className="text-xs text-amber-600">
+                                  UPC: {upc.upc}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-amber-700 text-lg">
+                                {upc.total_streams.toLocaleString()}
+                              </div>
+                              <div className="text-xs text-amber-600">streams</div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-600">Performance</span>
+                            <span className="text-sm font-semibold text-amber-700">
+                              {formatCurrency(upc.total_revenue)}
+                            </span>
+                          </div>
+                          
+                          <Progress
+                            value={percentage}
+                            className="h-2"
+                            color="warning"
+                            classNames={{
+                              track: "bg-amber-100",
+                              indicator: isTopPerformer ? "bg-amber-500" : "bg-amber-400"
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          )}
+
+          {/* Territory Performance */}
+          {insightsData.territory_performance.length > 0 && (
+            <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold text-emerald-800">Territory Performance</h3>
+                    <p className="text-sm text-emerald-600">Streams and revenue by region</p>
+                  </div>
+                  <div className="bg-emerald-500 text-white rounded-full px-3 py-1 text-sm font-semibold">
+                    {insightsData.territory_performance.length} regions
+                  </div>
+                </div>
+              </CardHeader>
+              <CardBody className="pt-0">
+                <div className="space-y-3">
+                  {insightsData.territory_performance.slice(0, 5).map((territory, index) => {
+                    const isTopTerritory = index === 0;
+                    
+                    return (
+                      <div key={territory.region} className="bg-white rounded-lg p-4 shadow-sm border border-emerald-200">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                              isTopTerritory ? "bg-emerald-500 text-white" : "bg-emerald-100 text-emerald-700"
+                            }`}>
+                              #{index + 1}
+                            </div>
+                            <div>
+                              <div className="font-semibold text-foreground text-lg capitalize">
+                                {territory.region}
+                              </div>
+                              <div className="text-sm text-emerald-600">
+                                {territory.total_streams.toLocaleString()} streams
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-bold text-emerald-700 text-xl">
+                              {formatCurrency(territory.total_revenue)}
+                            </div>
+                            <div className="text-sm text-emerald-600 font-medium">
+                              {territory.percentage_of_revenue.toFixed(1)}% of total
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 mb-3">
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-medium text-gray-600">Stream Share</span>
+                              <span className="text-xs font-semibold text-emerald-700">
+                                {territory.percentage_of_streams.toFixed(1)}%
+                              </span>
+                            </div>
+                            <Progress
+                              value={territory.percentage_of_streams}
+                              className="h-1.5"
+                              color="success"
+                              classNames={{
+                                track: "bg-emerald-100",
+                                indicator: isTopTerritory ? "bg-emerald-500" : "bg-emerald-400"
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-medium text-gray-600">Revenue Share</span>
+                              <span className="text-xs font-semibold text-emerald-700">
+                                {territory.percentage_of_revenue.toFixed(1)}%
+                              </span>
+                            </div>
+                            <Progress
+                              value={territory.percentage_of_revenue}
+                              className="h-1.5"
+                              color="success"
+                              classNames={{
+                                track: "bg-emerald-100",
+                                indicator: isTopTerritory ? "bg-emerald-500" : "bg-emerald-400"
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {insightsData.territory_performance.length === 0 && (
+                  <div className="text-center py-8 text-default-500">
+                    <div className="text-lg mb-2">🌍</div>
+                    <p>No territory data available for selected period</p>
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          )}
+        </div>
+      )}
 
       {/* Monthly Revenue Chart */}
       {insightsData && insightsData.monthly_chart && insightsData.monthly_chart.length > 0 && (
