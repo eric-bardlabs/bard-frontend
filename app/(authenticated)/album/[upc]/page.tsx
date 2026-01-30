@@ -572,9 +572,7 @@ export default function AlbumFinancialPage() {
                           formatCurrency(value),
                           'Advance Amount'
                         ]}
-                        contentStyle={{
-                          backgroundColor: value => value === 0 ? '#f9f9f9' : '#fff'
-                        }}
+                        contentStyle={{ backgroundColor: '#fff' }}
                       />
                       <Legend />
                       <Bar

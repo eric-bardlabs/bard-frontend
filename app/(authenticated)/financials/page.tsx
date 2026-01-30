@@ -585,7 +585,6 @@ export default function FinancialsPage() {
                     {insightsData.upc_performance.map((upc) => (
                       <SelectItem 
                         key={upc.upc} 
-                        value={upc.upc}
                         textValue={upc.album_name || upc.upc}
                       >
                         <div className="flex flex-col">
