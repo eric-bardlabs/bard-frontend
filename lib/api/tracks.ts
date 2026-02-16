@@ -448,6 +448,98 @@ export const fetchTracks = async ({
   }
 };
 
+// Song Financial Interfaces
+interface SongMonthlyFinancialData {
+  year: number;
+  month: number;
+  period: string; // "Jan 2024" format
+  streaming_revenue: number;
+  total_streams: number;
+}
+
+interface SongRegionMonthlyBreakdown {
+  year: number;
+  month: number;
+  period: string; // "Jan 2024" format
+  streams: number;
+  revenue: number;
+}
+
+interface SongDspMonthlyBreakdown {
+  year: number;
+  month: number;
+  period: string; // "Jan 2024" format
+  streams: number;
+  revenue: number;
+}
+
+interface SongTopRegion {
+  region: string;
+  total_streams: number;
+  total_revenue: number;
+  monthly_data: SongRegionMonthlyBreakdown[];
+}
+
+interface SongTopDsp {
+  dsp: string;
+  total_streams: number;
+  total_revenue: number;
+  monthly_data: SongDspMonthlyBreakdown[];
+}
+
+interface SongFinancialSummary {
+  total_streaming_revenue: number;
+}
+
+export interface SongFinancialResponse {
+  isrc: string;
+  song_name?: string;
+  monthly_data: SongMonthlyFinancialData[];
+  summary: SongFinancialSummary;
+  top_regions: SongTopRegion[];
+  top_dsps: SongTopDsp[];
+}
+
+interface FetchSongFinancialDataParams {
+  token: string;
+  isrc: string;
+  startYear?: number;
+  startMonth?: number;
+  endYear?: number;
+  endMonth?: number;
+}
+
+export const fetchSongFinancialData = async ({
+  token,
+  isrc,
+  startYear,
+  startMonth,
+  endYear,
+  endMonth,
+}: FetchSongFinancialDataParams): Promise<SongFinancialResponse> => {
+  try {
+    const params = new URLSearchParams();
+    
+    if (startYear !== undefined) params.append("start_year", startYear.toString());
+    if (startMonth !== undefined) params.append("start_month", startMonth.toString());
+    if (endYear !== undefined) params.append("end_year", endYear.toString());
+    if (endMonth !== undefined) params.append("end_month", endMonth.toString());
+
+    const response = await axios.get<SongFinancialResponse>(
+      `${API_BASE_URL}/tracks/${isrc}/financials?${params}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Export types for use in components
 export type { 
   TracksListResponse, 
@@ -456,4 +548,10 @@ export type {
   TrackCollaborator,
   TrackCollaboratorInput,
   DeleteTrackResponse,
+  SongMonthlyFinancialData,
+  SongRegionMonthlyBreakdown,
+  SongDspMonthlyBreakdown,
+  SongTopRegion,
+  SongTopDsp,
+  SongFinancialSummary,
 };
