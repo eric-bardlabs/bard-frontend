@@ -14,9 +14,14 @@ import {
   Guitar,
   Sparkles,
   DollarSign,
+  ChevronDown,
+  ChevronRight,
+  BarChart3,
+  Music,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import { OrganizationSwitcher, useOrganization } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 
@@ -67,6 +72,81 @@ const SidebarLinkItem = ({
       {label}
       {rightBadge && rightBadge}
     </Link>
+  );
+};
+
+const SidebarSubLinkItem = ({
+  path,
+  label,
+  Icon,
+  toggleSidebar,
+}: {
+  path: string;
+  label: string;
+  Icon: LucideIcon;
+  toggleSidebar: () => void;
+}) => {
+  const pathname = usePathname();
+  return (
+    <Link
+      href={path}
+      className={`flex flex-row items-center gap-4 py-[8px] px-2 ml-6 ${
+        pathname === path && "font-bold"
+      } text-gray-300 hover:bg-slate-800 rounded text-sm`}
+      onClick={() => toggleSidebar()}
+      prefetch
+    >
+      <Icon size={16} />
+      {label}
+    </Link>
+  );
+};
+
+const FinancialsSection = ({ toggleSidebar }: { toggleSidebar: () => void }) => {
+  const pathname = usePathname();
+  const [isExpanded, setIsExpanded] = useState(pathname.startsWith('/financials'));
+  
+  const isFinancialsActive = pathname.startsWith('/financials');
+
+  return (
+    <>
+      <div
+        className={`flex flex-row items-center gap-4 py-[10px] px-2 ${
+          isFinancialsActive && "font-bold"
+        } text-white hover:bg-slate-800 rounded cursor-pointer`}
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <DollarSign size={20} />
+        {Pages.financials}
+        {isExpanded ? (
+          <ChevronDown size={16} className="ml-auto" />
+        ) : (
+          <ChevronRight size={16} className="ml-auto" />
+        )}
+      </div>
+      {isExpanded && (
+        <div className="flex flex-col gap-1">
+          <SidebarSubLinkItem
+            path="/financials"
+            label="Overview"
+            Icon={BarChart3}
+            toggleSidebar={toggleSidebar}
+          />
+          <SidebarSubLinkItem
+            path="/financials/songs"
+            label="By Songs"
+            Icon={Music}
+            toggleSidebar={toggleSidebar}
+          />
+          <SidebarSubLinkItem
+            path="/financials/albums"
+            label="By Albums"
+            Icon={Disc}
+            toggleSidebar={toggleSidebar}
+          />
+        </div>
+      )}
+    </>
   );
 };
 
@@ -172,12 +252,7 @@ export const Items = ({ isOpen, toggleSidebar }: Props) => {
             )}
             {anyOrganizationSelected && (
               <li>
-                <SidebarLinkItem
-                  path="/financials"
-                  label={Pages.financials}
-                  Icon={DollarSign}
-                  toggleSidebar={toggleSidebar}
-                />
+                <FinancialsSection toggleSidebar={toggleSidebar} />
               </li>
             )}
             <li>
