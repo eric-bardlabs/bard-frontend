@@ -31,19 +31,25 @@ export default function Chat() {
 
   // Properly construct WebSocket URL
   const socketHost = useMemo(() => {
+    let host;
     if (aiHost.startsWith("https://")) {
-      return aiHost.replace("https://", "wss://");
+      host = aiHost.replace("https://", "wss://");
     } else if (aiHost.startsWith("http://")) {
-      return aiHost.replace("http://", "ws://");
+      host = aiHost.replace("http://", "ws://");
+    } else {
+      host = `ws://${aiHost}`;
     }
-    return `ws://${aiHost}`;
+    console.log("Socket host:", host, "from aiHost:", aiHost);
+    return host;
   }, [aiHost]);
 
   const socket = useMemo(() => {
     if (!organization?.id || !user?.id) {
+      console.log("Socket not created - missing org or user:", { orgId: organization?.id, userId: user?.id });
       return null;
     }
 
+    console.log("Creating socket with:", { socketHost, orgId: organization.id, userId: user.id });
     const newSocket = io(socketHost, {
       auth: {
         organizationId: organization.id,
@@ -134,15 +140,18 @@ export default function Chat() {
     }
 
     function onConnect() {
+      console.log("Socket connected successfully!");
       setIsConnected(true);
       setConnectionError(null);
     }
 
     function onDisconnect(reason: string) {
+      console.log("Socket disconnected:", reason);
       setIsConnected(false);
 
       if (reason === "io server disconnect" && socket) {
         // Server disconnected us, try to reconnect
+        console.log("Attempting to reconnect...");
         socket.connect();
       }
     }
@@ -154,6 +163,7 @@ export default function Chat() {
     }
 
     function onThreadUpdated(data: any) {
+      console.log("Thread updated event received:", data);
       setThread({
         openaiThreadId: data.openai_thread_id,
         status: data.status,
@@ -161,10 +171,13 @@ export default function Chat() {
     }
 
     function onUserMessageUpdated(data: any) {
+      console.log("User message event received:", data);
       setMessages((prev) => {
         if (prev.some((msg) => msg.id === data.message.id)) {
+          console.log("User message already exists, skipping");
           return prev;
         } else {
+          console.log("Adding new user message");
           return [
             ...prev,
             {
@@ -179,10 +192,13 @@ export default function Chat() {
     }
 
     function onAssistantMessageUpdated(data: any) {
+      console.log("Assistant message event received:", data);
       setMessages((prev) => {
         if (prev.some((msg) => msg.id === data.message.id)) {
+          console.log("Assistant message already exists, skipping");
           return prev;
         } else {
+          console.log("Adding new assistant message");
           return [
             ...prev,
             {
