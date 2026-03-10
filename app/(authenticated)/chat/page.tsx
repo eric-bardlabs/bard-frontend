@@ -100,6 +100,7 @@ export default function Chat() {
     role: "assistant" | "tool" | "user";
   }) => {
     try {
+      console.log("Sending message, socket connected:", socket?.connected, "thread:", thread?.openaiThreadId);
       const token = await getToken({ template: "bard-backend" });
       const timestamp = new Date();
       const newMessage = {
@@ -113,6 +114,7 @@ export default function Chat() {
         timestamp: timestamp, // Keep as Date object for display
       }]);
 
+      console.log("Posting message to backend:", newMessage);
       await axios.post(
         `${aiHost}/chat/threads/${thread?.openaiThreadId}/messages`,
         newMessage,
@@ -123,6 +125,7 @@ export default function Chat() {
           },
         }
       );
+      console.log("Message posted successfully to backend");
     } catch (error) {
       console.error("Error sending message:", error);
     }
