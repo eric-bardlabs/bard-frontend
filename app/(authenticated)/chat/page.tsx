@@ -6,7 +6,7 @@ import { useAuth, useOrganization, useUser } from "@clerk/nextjs";
 import { Spinner } from "@heroui/react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { io } from "socket.io-client";
 
 export default function Chat() {
@@ -131,82 +131,82 @@ export default function Chat() {
     }
   };
 
+  // Stable event handlers using useCallback
+  const onConnect = useCallback(() => {
+    console.log("Socket connected successfully! Socket ID:", socket?.id);
+    setIsConnected(true);
+    setConnectionError(null);
+  }, [socket?.id]);
+
+  const onDisconnect = useCallback((reason: string) => {
+    console.log("Socket disconnected:", reason);
+    setIsConnected(false);
+
+    if (reason === "io server disconnect" && socket) {
+      console.log("Attempting to reconnect...");
+      socket.connect();
+    }
+  }, [socket]);
+
+  const onConnectError = useCallback((error: Error) => {
+    console.error("Socket connection error:", error);
+    setConnectionError(`Connection failed: ${error.message}`);
+    setIsConnected(false);
+  }, []);
+
+  const onThreadUpdated = useCallback((data: any) => {
+    console.log("Thread updated event received:", data);
+    setThread({
+      openaiThreadId: data.openai_thread_id,
+      status: data.status,
+    });
+  }, []);
+
+  const onUserMessageUpdated = useCallback((data: any) => {
+    console.log("User message event received:", data);
+    setMessages((prev) => {
+      if (prev.some((msg) => msg.id === data.message.id)) {
+        console.log("User message already exists, skipping");
+        return prev;
+      } else {
+        console.log("Adding new user message");
+        return [
+          ...prev,
+          {
+            id: data.message.id,
+            content: data.message.content?.trim(),
+            role: data.message.role,
+            timestamp: new Date(data.message.timestamp),
+          },
+        ];
+      }
+    });
+  }, []);
+
+  const onAssistantMessageUpdated = useCallback((data: any) => {
+    console.log("Assistant message event received:", data);
+    setMessages((prev) => {
+      if (prev.some((msg) => msg.id === data.message.id)) {
+        console.log("Assistant message already exists, skipping");
+        return prev;
+      } else {
+        console.log("Adding new assistant message");
+        return [
+          ...prev,
+          {
+            id: data.message.id,
+            content: data.message.content?.trim(),
+            role: data.message.role,
+            timestamp: new Date(data.message.timestamp),
+          },
+        ];
+      }
+    });
+  }, []);
+
   useEffect(() => {
     if (!socket) {
       return;
-    }
-
-    function onConnect() {
-      console.log("Socket connected successfully! Socket ID:", socket?.id);
-      setIsConnected(true);
-      setConnectionError(null);
-    }
-
-    function onDisconnect(reason: string) {
-      console.log("Socket disconnected:", reason);
-      setIsConnected(false);
-
-      if (reason === "io server disconnect" && socket) {
-        // Server disconnected us, try to reconnect
-        console.log("Attempting to reconnect...");
-        socket.connect();
-      }
-    }
-
-    function onConnectError(error: Error) {
-      console.error("Socket connection error:", error);
-      setConnectionError(`Connection failed: ${error.message}`);
-      setIsConnected(false);
-    }
-
-    function onThreadUpdated(data: any) {
-      console.log("Thread updated event received:", data);
-      setThread({
-        openaiThreadId: data.openai_thread_id,
-        status: data.status,
-      });
-    }
-
-    function onUserMessageUpdated(data: any) {
-      console.log("User message event received:", data);
-      setMessages((prev) => {
-        if (prev.some((msg) => msg.id === data.message.id)) {
-          console.log("User message already exists, skipping");
-          return prev;
-        } else {
-          console.log("Adding new user message");
-          return [
-            ...prev,
-            {
-              id: data.message.id,
-              content: data.message.content?.trim(),
-              role: data.message.role,
-              timestamp: new Date(data.message.timestamp),
-            },
-          ];
-        }
-      });
-    }
-
-    function onAssistantMessageUpdated(data: any) {
-      console.log("Assistant message event received:", data);
-      setMessages((prev) => {
-        if (prev.some((msg) => msg.id === data.message.id)) {
-          console.log("Assistant message already exists, skipping");
-          return prev;
-        } else {
-          console.log("Adding new assistant message");
-          return [
-            ...prev,
-            {
-              id: data.message.id,
-              content: data.message.content?.trim(),
-              role: data.message.role,
-              timestamp: new Date(data.message.timestamp),
-            },
-          ];
-        }
-      });
     }
 
     // Register event handlers BEFORE connecting
@@ -233,10 +233,10 @@ export default function Chat() {
         socket.off("thread_updated", onThreadUpdated);
         socket.off("user_message_updated", onUserMessageUpdated);
         socket.off("assistant_message_updated", onAssistantMessageUpdated);
-        socket.close();
+        // Don't close socket here, just remove handlers
       }
     };
-  }, [socket, socketHost]);
+  }, [socket, onConnect, onDisconnect, onConnectError, onThreadUpdated, onUserMessageUpdated, onAssistantMessageUpdated]);
 
   if (!thread) {
     return (
