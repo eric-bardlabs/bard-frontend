@@ -6,13 +6,10 @@ import { useAuth, useOrganization, useUser } from "@clerk/nextjs";
 import { Spinner } from "@heroui/react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { io } from "socket.io-client";
+import { useState, useEffect, useMemo } from "react";
 
 export default function Chat() {
 
-  const [isConnected, setIsConnected] = useState(false);
-  const [connectionError, setConnectionError] = useState<string | null>(null);
   const [thread, setThread] = useState<
     | {
         openaiThreadId: string;
@@ -29,42 +26,38 @@ export default function Chat() {
     process.env.NEXT_PUBLIC_BARD_BACKEND_API_BASE_URL ||
     "http://localhost:8000";
 
-  // Properly construct WebSocket URL
-  const socketHost = useMemo(() => {
-    let host;
-    if (aiHost.startsWith("https://")) {
-      host = aiHost.replace("https://", "wss://");
-    } else if (aiHost.startsWith("http://")) {
-      host = aiHost.replace("http://", "ws://");
-    } else {
-      host = `ws://${aiHost}`;
-    }
-    console.log("Socket host:", host, "from aiHost:", aiHost);
-    return host;
-  }, [aiHost]);
-
-  const socket = useMemo(() => {
-    if (!organization?.id || !user?.id) {
-      console.log("Socket not created - missing org or user:", { orgId: organization?.id, userId: user?.id });
-      return null;
-    }
-
-    console.log("Creating socket with:", { socketHost, orgId: organization.id, userId: user.id });
-    const newSocket = io(socketHost, {
-      auth: {
-        organizationId: organization.id,
-        userId: user.id,
-      },
-      transports: ["websocket", "polling"],
-      timeout: 20000,
-      forceNew: true,
-    });
-
-    return newSocket;
-  }, [socketHost, organization?.id, user?.id]);
-
   const [messages, setMessages] = useState<any[]>([]);
   const [initialized, setInitialized] = useState(false);
+
+  // Fetch initial thread info
+  const { data: threadData, isLoading: isLoadingThread } = useQuery({
+    queryKey: ["chat-thread", organization?.id, user?.id],
+    queryFn: async () => {
+      const token = await getToken({ template: "bard-backend" });
+      if (!token) {
+        throw new Error("No authentication token");
+      }
+      
+      const response = await axios.get(`${aiHost}/chat/thread`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      return response.data;
+    },
+    enabled: !!organization?.id && !!user?.id,
+  });
+
+  // Set thread from query data
+  useEffect(() => {
+    if (threadData && !thread) {
+      setThread({
+        openaiThreadId: threadData.openai_thread_id,
+        status: threadData.status,
+      });
+    }
+  }, [threadData, thread]);
 
   const getMessagesHandler = async (messageId?: string) => {
     const token = await getToken({ template: "bard-backend" });
@@ -100,7 +93,6 @@ export default function Chat() {
     role: "assistant" | "tool" | "user";
   }) => {
     try {
-      console.log("Sending message, socket connected:", socket?.connected, "socket ID:", socket?.id, "thread:", thread?.openaiThreadId);
       const token = await getToken({ template: "bard-backend" });
       const timestamp = new Date();
       const newMessage = {
@@ -109,13 +101,18 @@ export default function Chat() {
         role: message.role,
         timestamp: timestamp.toISOString(),
       };
+
+      // Add user message immediately
       setMessages((prev) => [...prev, {
         ...newMessage,
         timestamp: timestamp, // Keep as Date object for display
       }]);
 
+      // Set thread status to in_progress to show spinner
+      setThread((prev) => prev ? { ...prev, status: "in_progress" } : prev);
+
       console.log("Posting message to backend:", newMessage);
-      await axios.post(
+      const response = await axios.post(
         `${aiHost}/chat/threads/${thread?.openaiThreadId}/messages`,
         newMessage,
         {
@@ -125,123 +122,27 @@ export default function Chat() {
           },
         }
       );
-      console.log("Message posted successfully to backend");
+
+      console.log("Response received:", response.data);
+      
+      // Add assistant message from response
+      setMessages((prev) => [...prev, {
+        id: response.data.assistant_message.id,
+        content: response.data.assistant_message.content,
+        role: response.data.assistant_message.role,
+        timestamp: new Date(response.data.assistant_message.timestamp),
+      }]);
+
+      // Set thread status back to completed
+      setThread((prev) => prev ? { ...prev, status: "completed" } : prev);
+
     } catch (error) {
       console.error("Error sending message:", error);
+      // Reset thread status on error
+      setThread((prev) => prev ? { ...prev, status: "completed" } : prev);
     }
   };
 
-  // Stable event handlers using useCallback
-  const onConnect = useCallback(() => {
-    console.log("Socket connected successfully! Socket ID:", socket?.id);
-    setIsConnected(true);
-    setConnectionError(null);
-  }, [socket?.id]);
-
-  const onDisconnect = useCallback((reason: string) => {
-    console.log("Socket disconnected:", reason);
-    setIsConnected(false);
-
-    if (reason === "io server disconnect" && socket) {
-      console.log("Attempting to reconnect...");
-      socket.connect();
-    }
-  }, [socket]);
-
-  const onConnectError = useCallback((error: Error) => {
-    console.error("Socket connection error:", error);
-    setConnectionError(`Connection failed: ${error.message}`);
-    setIsConnected(false);
-  }, []);
-
-  const onThreadUpdated = useCallback((data: any) => {
-    console.log("Thread updated event received:", data);
-    setThread({
-      openaiThreadId: data.openai_thread_id,
-      status: data.status,
-    });
-  }, []);
-
-  const onUserMessageUpdated = useCallback((data: any) => {
-    console.log("User message event received:", data);
-    setMessages((prev) => {
-      if (prev.some((msg) => msg.id === data.message.id)) {
-        console.log("User message already exists, skipping");
-        return prev;
-      } else {
-        console.log("Adding new user message");
-        return [
-          ...prev,
-          {
-            id: data.message.id,
-            content: data.message.content?.trim(),
-            role: data.message.role,
-            timestamp: new Date(data.message.timestamp),
-          },
-        ];
-      }
-    });
-  }, []);
-
-  const onAssistantMessageUpdated = useCallback((data: any) => {
-    console.log("Assistant message event received:", data);
-    setMessages((prev) => {
-      if (prev.some((msg) => msg.id === data.message.id)) {
-        console.log("Assistant message already exists, skipping");
-        return prev;
-      } else {
-        console.log("Adding new assistant message");
-        return [
-          ...prev,
-          {
-            id: data.message.id,
-            content: data.message.content?.trim(),
-            role: data.message.role,
-            timestamp: new Date(data.message.timestamp),
-          },
-        ];
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!socket) {
-      return;
-    }
-
-    console.log("Setting up event handlers...");
-    
-    // Register event handlers BEFORE connecting
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
-    socket.on("connect_error", onConnectError);
-    socket.on("thread_updated", onThreadUpdated);
-    socket.on("user_message_updated", onUserMessageUpdated);
-    socket.on("assistant_message_updated", onAssistantMessageUpdated);
-
-    console.log("Event handlers registered, current listeners count:", socket.listenerCount('thread_updated'));
-
-    // Connect AFTER handlers are registered
-    if (socket.connected) {
-      onConnect();
-    } else {
-      console.log("Connecting socket with handlers already registered...");
-      socket.connect();
-    }
-
-    return () => {
-      console.log("Cleaning up event handlers, before removal listeners count:", socket?.listenerCount?.('thread_updated'));
-      if (socket) {
-        socket.off("connect", onConnect);
-        socket.off("disconnect", onDisconnect);
-        socket.off("connect_error", onConnectError);
-        socket.off("thread_updated", onThreadUpdated);
-        socket.off("user_message_updated", onUserMessageUpdated);
-        socket.off("assistant_message_updated", onAssistantMessageUpdated);
-        console.log("After cleanup listeners count:", socket.listenerCount('thread_updated'));
-      }
-    };
-  }, [socket, onConnect, onDisconnect, onConnectError, onThreadUpdated, onUserMessageUpdated, onAssistantMessageUpdated]);
 
   if (!thread) {
     return (
@@ -253,11 +154,6 @@ export default function Chat() {
 
   return (
     <div className="flex flex-col h-full pt-[72px] md:pt-0">
-      {connectionError && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          <strong>Connection Error:</strong> {connectionError}
-        </div>
-      )}
       <ChatInterface
         thread={thread}
         messages={messages}
