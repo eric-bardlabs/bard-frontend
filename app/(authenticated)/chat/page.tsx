@@ -100,7 +100,7 @@ export default function Chat() {
     role: "assistant" | "tool" | "user";
   }) => {
     try {
-      console.log("Sending message, socket connected:", socket?.connected, "thread:", thread?.openaiThreadId);
+      console.log("Sending message, socket connected:", socket?.connected, "socket ID:", socket?.id, "thread:", thread?.openaiThreadId);
       const token = await getToken({ template: "bard-backend" });
       const timestamp = new Date();
       const newMessage = {
@@ -136,14 +136,8 @@ export default function Chat() {
       return;
     }
 
-    if (socket.connected) {
-      onConnect();
-    } else {
-      socket.connect();
-    }
-
     function onConnect() {
-      console.log("Socket connected successfully!");
+      console.log("Socket connected successfully! Socket ID:", socket?.id);
       setIsConnected(true);
       setConnectionError(null);
     }
@@ -215,12 +209,21 @@ export default function Chat() {
       });
     }
 
+    // Register event handlers BEFORE connecting
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
     socket.on("connect_error", onConnectError);
     socket.on("thread_updated", onThreadUpdated);
     socket.on("user_message_updated", onUserMessageUpdated);
     socket.on("assistant_message_updated", onAssistantMessageUpdated);
+
+    // Connect AFTER handlers are registered
+    if (socket.connected) {
+      onConnect();
+    } else {
+      console.log("Connecting socket with handlers already registered...");
+      socket.connect();
+    }
 
     return () => {
       if (socket) {
