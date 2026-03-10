@@ -168,7 +168,7 @@ export default function Chat() {
           return [
             ...prev,
             {
-              id: data.message.message_id,
+              id: data.message.id,
               content: data.message.content?.trim(),
               role: data.message.role,
               timestamp: new Date(data.message.timestamp),
@@ -186,7 +186,7 @@ export default function Chat() {
           return [
             ...prev,
             {
-              id: data.message.message_id,
+              id: data.message.id,
               content: data.message.content?.trim(),
               role: data.message.role,
               timestamp: new Date(data.message.timestamp),
