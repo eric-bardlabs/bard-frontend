@@ -209,6 +209,8 @@ export default function Chat() {
       return;
     }
 
+    console.log("Setting up event handlers...");
+    
     // Register event handlers BEFORE connecting
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
@@ -216,6 +218,8 @@ export default function Chat() {
     socket.on("thread_updated", onThreadUpdated);
     socket.on("user_message_updated", onUserMessageUpdated);
     socket.on("assistant_message_updated", onAssistantMessageUpdated);
+
+    console.log("Event handlers registered, current listeners count:", socket.listenerCount('thread_updated'));
 
     // Connect AFTER handlers are registered
     if (socket.connected) {
@@ -226,6 +230,7 @@ export default function Chat() {
     }
 
     return () => {
+      console.log("Cleaning up event handlers, before removal listeners count:", socket?.listenerCount?.('thread_updated'));
       if (socket) {
         socket.off("connect", onConnect);
         socket.off("disconnect", onDisconnect);
@@ -233,7 +238,7 @@ export default function Chat() {
         socket.off("thread_updated", onThreadUpdated);
         socket.off("user_message_updated", onUserMessageUpdated);
         socket.off("assistant_message_updated", onAssistantMessageUpdated);
-        // Don't close socket here, just remove handlers
+        console.log("After cleanup listeners count:", socket.listenerCount('thread_updated'));
       }
     };
   }, [socket, onConnect, onDisconnect, onConnectError, onThreadUpdated, onUserMessageUpdated, onAssistantMessageUpdated]);
